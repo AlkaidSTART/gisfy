@@ -3,8 +3,9 @@ import PromptEditor from "@/components/workspace/prompt-editor";
 import ParamControls from "@/components/workspace/param-controls";
 import PreviewCard from "@/components/workspace/preview-card";
 import HistoryBar from "@/components/workspace/history-bar";
-import { PenTool } from "lucide-react";
+import { PenTool, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function GeneratePage() {
   return (
@@ -16,6 +17,16 @@ export default function GeneratePage() {
             设置参数并生成高质量的 2D 游戏资产
           </p>
         </div>
+        <Link href="/showcase">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 rounded-xl border-dashed"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            查看已生成资产
+          </Button>
+        </Link>
       </div>
 
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">

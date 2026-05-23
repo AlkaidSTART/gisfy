@@ -21,16 +21,22 @@ export default function Header() {
         </div>
         
         {/* Central Nav Links */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
+          <Link href="/" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
+            首页
+          </Link>
           <Link href="/generate" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
             工作台
+          </Link>
+          <Link href="/showcase" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
+            成品展示
           </Link>
         </nav>
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           <Link href="/generate">
-            <Button size="sm" className="hidden sm:inline-flex">开始创作</Button>
+            <Button size="sm" className="hidden sm:inline-flex rounded-xl px-5">开始创作</Button>
           </Link>
         </div>
 
