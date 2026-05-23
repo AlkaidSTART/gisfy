@@ -1,20 +1,20 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-23 · Day 2 中后期
+> 最后更新：2026-05-23 · Day 2 后期（后端接口测试与修复完成）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
 
 ## 1. 一句话状态
 
-生成闭环已完成（润色→生成→Supabase存储→预览），异步任务+动画已上线。`/:userid` 用户识别，参考图上传+视觉识别已就绪。
+✅ 后端接口全部测试通过。生成闭环已完成（DashScope异步API→URL下载→Supabase优雅降级→预览），异步任务+动画已上线。
 
 ---
 
 ## 2. 已完成 ✅
 
-- ✅ 阿里百炼封装（`src/lib/ali.ts`）
-- ✅ Supabase Storage（替代七牛云）· `src/lib/supabase-storage.ts`
+- ✅ 阿里百炼封装（`src/lib/ali.ts`）— 使用 DashScope 原生异步 API，支持 wanx2.1-t2i-turbo
+- ✅ Supabase Storage（替代七牛云）· `src/lib/supabase-storage.ts` — 优雅降级，bucket 缺失时回退 base64
 - ✅ `POST /api/generate` — 异步任务生成（fire-and-forget + 轮询）
 - ✅ `GET /api/generate/status` — 任务状态轮询
 - ✅ `POST /api/polish` — AI 润色（中文输出）
@@ -24,11 +24,16 @@
 - ✅ `PreviewCard`：异步生成粒子动画 + 环形进度 + 步骤指示 + 结果揭露
 - ✅ `PromptEditor`：AI润色(中文,接受/拒绝) + 参考图上传 + Enter发送
 - ✅ Assets store 按 userId 分片
+- ✅ **后端接口测试全部通过** (`tests/api-routes.test.ts`)
+- ✅ **模块惰性加载修复**（supabase/prisma/redis 不再在 import 时崩溃）
+- ✅ **DashScope API 修复**（异步模式 + 正确模型名 + URL转base64）
+- ✅ **尺寸自动提升**（<512 自动升至 512，满足 wanx2.1-t2i-turbo 最低要求）
 
 ---
 
 ## 3. 待办 📋
 
+- [ ] Supabase Storage Bucket 手动创建（或通过 Dashboard）
 - [ ] Spritesheet 合成（P1）
 - [ ] 素材类型选择 UI
 - [ ] Seed 控制 + 负面提示词
