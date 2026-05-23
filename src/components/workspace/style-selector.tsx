@@ -1,49 +1,111 @@
 "use client";
-import { Grid, Palette, Box } from "lucide-react";
-import { cn } from "@/components/ui/button";
+
+import { Grid, Palette, Box, Check, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STYLES = [
-  { id: "pixel", name: "像素复古", icon: Grid, desc: "16bit/32bit" },
-  { id: "flat", name: "扁平极简", icon: Box, desc: "矢量插画" },
-  { id: "anime", name: "赛璐璐", icon: Palette, desc: "动漫日写" }
+  {
+    id: "pixel",
+    name: "像素艺术",
+    icon: Grid,
+    desc: "Retro Pixel",
+    color: "from-blue-500 to-indigo-500",
+    bg: "bg-blue-50",
+  },
+  {
+    id: "flat",
+    name: "平面插画",
+    icon: Box,
+    desc: "Minimalist",
+    color: "from-amber-500 to-orange-500",
+    bg: "bg-amber-50",
+  },
+  {
+    id: "anime",
+    name: "二次元",
+    icon: Palette,
+    desc: "Cel Shaded",
+    color: "from-purple-500 to-pink-500",
+    bg: "bg-purple-50",
+  },
 ];
 
 export default function StyleSelector() {
-  // Hardcoded active state for display purposes
   const activeId = "pixel";
 
   return (
-    <div className="glass-panel p-5 rounded-2xl flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">视觉风格</h2>
-        <span className="text-xs text-[#0EA5E9] font-medium bg-[#0EA5E9]/10 px-2 py-0.5 rounded-full">主色调提取</span>
+    <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border-white bg-white/60">
+      <div className="flex items-center justify-between px-1">
+        <div className="flex flex-col">
+          <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">
+            视觉预设
+          </h2>
+          <span className="text-sm font-bold text-gray-900 mt-1">
+            Render Styles
+          </span>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-white border border-border/40 flex items-center justify-center shadow-sm">
+          <Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" />
+        </div>
       </div>
-      
-      <div className="grid grid-cols-3 gap-3">
+
+      <div className="flex flex-col gap-3">
         {STYLES.map((style) => {
           const isActive = style.id === activeId;
           const Icon = style.icon;
-          
+
           return (
             <button
               key={style.id}
               className={cn(
-                "flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200",
-                isActive 
-                  ? "bg-white border-[#0EA5E9] shadow-sm ring-1 ring-[#0EA5E9]/20" 
-                  : "bg-(--color-background) border-(--color-border) hover:border-gray-300 hover:bg-white"
+                "group relative w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 overflow-hidden",
+                isActive
+                  ? "bg-white border-white shadow-lg shadow-blue-500/5 ring-1 ring-black/5"
+                  : "bg-transparent border-transparent hover:bg-white/40 hover:border-white",
               )}
             >
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center mb-2",
-                isActive ? "bg-[#0EA5E9]/10" : "bg-gray-100"
-              )}>
-                <Icon className={cn("w-4 h-4", isActive ? "text-[#0EA5E9]" : "text-gray-500")} />
+              {/* Highlight bar */}
+              {isActive && (
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0EA5E9]"></div>
+              )}
+
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
+                  isActive
+                    ? style.bg
+                    : "bg-white border border-border/40 shadow-sm group-hover:scale-105",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "w-5 h-5",
+                    isActive ? "text-[#0EA5E9]" : "text-gray-400",
+                  )}
+                />
               </div>
-              <span className={cn("text-xs font-medium", isActive ? "text-gray-900" : "text-gray-600")}>
-                {style.name}
-              </span>
-              <span className="text-[10px] text-gray-400 mt-1 transform scale-90">{style.desc}</span>
+
+              <div className="flex flex-col items-start flex-1 text-left">
+                <span
+                  className={cn(
+                    "text-sm font-bold tracking-tight transition-colors",
+                    isActive
+                      ? "text-gray-900"
+                      : "text-gray-500 group-hover:text-gray-900",
+                  )}
+                >
+                  {style.name}
+                </span>
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">
+                  {style.desc}
+                </span>
+              </div>
+
+              {isActive && (
+                <div className="w-5 h-5 rounded-full bg-[#0EA5E9] flex items-center justify-center shadow-md">
+                  <Check className="w-3 h-3 text-white stroke-[4px]" />
+                </div>
+              )}
             </button>
           );
         })}
