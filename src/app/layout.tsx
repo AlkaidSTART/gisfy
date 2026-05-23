@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/layout/header";
+import { AuthProvider } from "@/lib/store/auth-store";
 
 export const metadata: Metadata = {
   title: "GisFy — AI 2D 游戏素材生成器",
@@ -15,10 +16,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="flex flex-col min-h-screen">
-        <Header />
-        <div className="flex-1 flex flex-col items-center py-6 px-4 md:px-8 w-full max-w-7xl mx-auto animate-fade-in">
-          {children}
-        </div>
+        <AuthProvider>
+          <Header />
+          <div className="flex-1 flex flex-col items-center py-6 px-4 md:px-8 w-full max-w-7xl mx-auto animate-fade-in">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

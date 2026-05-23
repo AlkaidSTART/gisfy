@@ -98,4 +98,26 @@ export type ApiError = {
   success: false;
   error: { code: string; message: string };
 };
+
+// ─── Auth ────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+export const registerBodySchema = z.object({
+  email: z.string().email().max(255),
+  name: z.string().min(1).max(50),
+  password: z.string().min(6).max(100),
+});
+
+export const loginBodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export type RegisterInput = z.infer<typeof registerBodySchema>;
+export type LoginInput = z.infer<typeof loginBodySchema>;
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
