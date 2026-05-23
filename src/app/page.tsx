@@ -48,7 +48,7 @@ export default function Home() {
 
         {/* Right Column: Preview & Editor */}
         <div
-          className="lg:col-span-8 xl:col-span-9 w-full h-full min-h-[500px] flex flex-col animate-slide-up"
+          className="lg:col-span-8 xl:col-span-9 w-full h-full min-h-125 flex flex-col animate-slide-up"
           style={{ animationDelay: "150ms" }}
         >
           <PreviewCard />

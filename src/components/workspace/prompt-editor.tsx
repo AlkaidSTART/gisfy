@@ -19,7 +19,7 @@ export default function PromptEditor() {
       <div className="relative group">
         <textarea 
           placeholder="例如：一个生锈的铁剑，带有蓝色的魔法光芒，适合放在 RPG 游戏的装备栏中..."
-          className="w-full h-32 p-3 text-sm bg-white/50 border border-[var(--color-border)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:border-[#0EA5E9]/50 transition-all resize-none placeholder:text-gray-400 text-gray-800"
+          className="w-full h-32 p-3 text-sm bg-white/50 border border-(--color-border) rounded-xl outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:border-[#0EA5E9]/50 transition-all resize-none placeholder:text-gray-400 text-gray-800"
         />
         <div className="absolute bottom-3 right-3 flex items-center gap-2">
           <button className="p-1.5 text-gray-400 hover:text-gray-700 bg-white rounded-md shadow-sm border border-gray-100 transition-colors">

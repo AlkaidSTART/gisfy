@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[var(--color-border)] glass-panel rounded-none">
+    <header className="sticky top-0 z-50 w-full border-b border-(--color-border) glass-panel rounded-none">
       <div className="max-w-7xl mx-auto flex h-14 items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-lg shadow-sm">
@@ -12,7 +12,7 @@ export default function Header() {
           <Link href="/" className="font-semibold text-lg tracking-tight">
             GisFy
           </Link>
-          <span className="px-2 py-0.5 ml-2 text-xs bg-[var(--color-secondary)] border border-[var(--color-border)] text-muted-foreground rounded-full">
+          <span className="px-2 py-0.5 ml-2 text-xs bg-(--color-secondary) border border-(--color-border) text-muted-foreground rounded-full">
             Beta
           </span>
         </div>

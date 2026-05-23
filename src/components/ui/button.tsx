@@ -23,7 +23,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-[#0EA5E9] text-white hover:bg-[#0284C7] shadow-sm shadow-[#0EA5E9]/20 border border-[#0EA5E9]/50",
       secondary: "glass-button text-gray-800",
       outline:
-        "border border-[var(--color-border)] bg-transparent hover:bg-black/5 text-gray-800",
+        "border border-(--color-border) bg-transparent hover:bg-black/5 text-gray-800",
       ghost: "hover:bg-black/5 text-gray-600 hover:text-gray-900",
     };
 

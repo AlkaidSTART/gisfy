@@ -31,7 +31,7 @@ export default function StyleSelector() {
                 "flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200",
                 isActive 
                   ? "bg-white border-[#0EA5E9] shadow-sm ring-1 ring-[#0EA5E9]/20" 
-                  : "bg-[var(--color-background)] border-[var(--color-border)] hover:border-gray-300 hover:bg-white"
+                  : "bg-(--color-background) border-(--color-border) hover:border-gray-300 hover:bg-white"
               )}
             >
               <div className={cn(

@@ -1,5 +1,5 @@
 "use client";
-import { SlidersHorizontal, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 
 export default function ParamControls() {
   return (
@@ -18,7 +18,7 @@ export default function ParamControls() {
             <span className="text-gray-600 font-medium">背景处理</span>
             <span className="text-gray-400">自动抠图</span>
           </div>
-          <div className="p-1 bg-[var(--color-secondary)] border border-[var(--color-border)] rounded-lg grid grid-cols-2 text-xs">
+          <div className="p-1 bg-(--color-secondary) border border-(--color-border) rounded-lg grid grid-cols-2 text-xs">
             <button className="py-1.5 rounded-md bg-white shadow-sm font-medium text-gray-900">
               透明背景 (PNG)
             </button>
@@ -29,7 +29,7 @@ export default function ParamControls() {
         </div>
 
         {/* Size Setting */}
-        <div className="flex flex-col gap-2 pt-2 border-t border-[var(--color-border)]/50">
+        <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="text-gray-600 font-medium">输出尺寸 (像素)</span>
             <span className="text-[#0EA5E9] font-mono">1024 x 1024</span>
