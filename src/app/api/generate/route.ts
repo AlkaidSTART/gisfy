@@ -110,7 +110,11 @@ async function runGeneration(
       error instanceof Error
         ? error.message || error.constructor.name
         : "生成失败";
-    console.error("[generate] async error:", message, JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    console.error(
+      "[generate] async error:",
+      message,
+      JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+    );
     updateTask(task.taskId, { status: "failed", progress: 0, error: message });
   }
 }

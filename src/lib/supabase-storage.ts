@@ -21,7 +21,7 @@ async function ensureBucket() {
     console.warn(
       `[supabase] Bucket "${BUCKET}" not found. ` +
         "Please create it at: Storage > New Bucket (public). " +
-        "Uploads will be skipped until then."
+        "Uploads will be skipped until then.",
     );
     return false;
   }

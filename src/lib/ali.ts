@@ -1,4 +1,5 @@
-const DASHSCOPE_BASE = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis";
+const DASHSCOPE_BASE =
+  "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis";
 
 interface DashScopeTaskResult {
   output: {
@@ -22,7 +23,10 @@ async function urlToBase64(url: string): Promise<string> {
   return buffer.toString("base64");
 }
 
-async function pollTask(taskId: string, apiKey: string): Promise<DashScopeTaskResult> {
+async function pollTask(
+  taskId: string,
+  apiKey: string,
+): Promise<DashScopeTaskResult> {
   for (let i = 0; i < 60; i++) {
     await new Promise((r) => setTimeout(r, 2000));
     const res = await fetch(

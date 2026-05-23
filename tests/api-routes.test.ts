@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { GET as assetsGet, POST as assetsPost, DELETE as assetsDelete } from "@/app/api/assets/route";
+import {
+  GET as assetsGet,
+  POST as assetsPost,
+  DELETE as assetsDelete,
+} from "@/app/api/assets/route";
 import { POST as generatePost } from "@/app/api/generate/route";
 import { GET as generateStatusGet } from "@/app/api/generate/status/route";
 import { POST as uploadPost } from "@/app/api/upload/route";
@@ -11,9 +15,11 @@ async function pollUntilCompleted(taskId: string, timeoutMs = 10000) {
       new Request(`http://localhost/api/generate/status?taskId=${taskId}`),
     );
     const json = await res.json();
-    if (!json.success) throw new Error(`Status check failed: ${json.error?.message}`);
+    if (!json.success)
+      throw new Error(`Status check failed: ${json.error?.message}`);
     if (json.data.status === "completed") return json.data;
-    if (json.data.status === "failed") throw new Error(`Generation failed: ${json.data.error}`);
+    if (json.data.status === "failed")
+      throw new Error(`Generation failed: ${json.data.error}`);
     await new Promise((r) => setTimeout(r, 300));
   }
   throw new Error("Timed out waiting for generation");
@@ -105,7 +111,9 @@ describe("API connectivity", () => {
 
     // 5) List assets
     const listRes = await assetsGet(
-      new Request("http://localhost/api/assets?page=1&limit=20&sort=newest&userId=test-user"),
+      new Request(
+        "http://localhost/api/assets?page=1&limit=20&sort=newest&userId=test-user",
+      ),
     );
     expect(listRes.status).toBe(200);
     const listJson = await listRes.json();
