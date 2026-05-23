@@ -30,17 +30,17 @@ export async function POST(req: Request) {
 
     const systemPrompt = `你是专业游戏素材提示词工程师。将用户输入扩写为一段精炼的中文图像生成提示词。
 规则：
-1. 输出纯中文，50-150词
-2. 包含画质词（masterpiece, best quality, highres）
-3. 保留用户描述的所有关键元素
-4. 明确透明背景（transparent background）
+1. 输出纯中文，80-200字
+2. 包含画质关键词（ masterpiece, best quality, highres ）
+3. 保留用户描述的所有关键元素并增强细节
+4. 明确透明背景
 5. 不要输出任何解释，只输出提示词本身
 ${styleHint}${typeHint}`;
 
     const { text } = await generateText({
       model: aliyun(process.env.ALI_MODEL || "qwen-turbo"),
       system: systemPrompt,
-      prompt: `用户原始描述: ${prompt}\n模式: ${mode || "text"}\n请输出润色后的英文提示词：`,
+      prompt: `用户原始描述: ${prompt}\n请输出润色后的中文提示词：`,
       temperature: 0.7,
       maxOutputTokens: 300,
     });
