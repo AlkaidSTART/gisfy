@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import type { TaskStatus } from "@/types";
 
 gsap.registerPlugin(useGSAP);
 
@@ -27,16 +28,20 @@ interface Asset {
 export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
 
-  // --- 状态管理 ---
-  const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">("pixel");
+  const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">(
+    "pixel",
+  );
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState<TaskStatus | "idle">("idle");
+  const [genProgress, setGenProgress] = useState(0);
   const [config, setConfig] = useState({
     transparent: true,
     resolution: 256,
     enhancement: true,
   });
   const [history, setHistory] = useState<Asset[]>([]);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadAssets = useCallback(async () => {
     try {
@@ -45,39 +50,82 @@ export default function GeneratePage() {
       });
       const json = await res.json();
       if (!json?.success) return;
-
-      const items: Asset[] = json.data.assets.map((a: {
-        id: string;
-        cdnUrl: string;
-        prompt: string;
-        style: "pixel" | "flat" | "anime";
-        type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
-        size: number;
-        createdAt: string;
-      }) => ({
-        id: a.id,
-        url: a.cdnUrl,
-        prompt: a.prompt,
-        style: a.style,
-        type: a.type,
-        size: a.size,
-        timestamp: a.createdAt,
-      }));
-
+      const items: Asset[] = json.data.assets.map(
+        (a: {
+          id: string;
+          cdnUrl: string;
+          prompt: string;
+          style: "pixel" | "flat" | "anime";
+          type:
+            | "character"
+            | "monster"
+            | "scene"
+            | "tile"
+            | "item"
+            | "ui"
+            | "effect";
+          size: number;
+          createdAt: string;
+        }) => ({
+          id: a.id,
+          url: a.cdnUrl,
+          prompt: a.prompt,
+          style: a.style,
+          type: a.type,
+          size: a.size,
+          timestamp: a.createdAt,
+        }),
+      );
       setHistory(items);
     } catch (e) {
       console.error(e);
     }
   }, []);
 
-  // --- 真实生成逻辑 ---
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const pollTask = useCallback(
+    (taskId: string) => {
+      stopPolling();
+      pollingRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/generate/status?taskId=${taskId}`);
+          const json = await res.json();
+          if (!json?.success) return;
+
+          const { status, progress, images } = json.data;
+          setGenStatus(status);
+          setGenProgress(progress);
+
+          if (status === "completed" && images?.length) {
+            stopPolling();
+            setIsGenerating(false);
+            await loadAssets();
+          } else if (status === "failed") {
+            stopPolling();
+            setIsGenerating(false);
+          }
+        } catch {
+          /* poll error, keep trying */
+        }
+      }, 1000);
+    },
+    [stopPolling, loadAssets],
+  );
+
   const handleGenerate = useCallback(async () => {
     if (!prompt || isGenerating) return;
-
     setIsGenerating(true);
+    setGenStatus("queued");
+    setGenProgress(5);
 
     try {
-      const generateRes = await fetch("/api/generate", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,78 +136,26 @@ export default function GeneratePage() {
           count: 1,
         }),
       });
+      const json = await res.json();
+      if (!res.ok || !json?.success)
+        throw new Error(json?.error?.message || "生成失败");
 
-      const generateJson = await generateRes.json();
-      if (!generateRes.ok || !generateJson?.success) {
-        throw new Error(generateJson?.error?.message || "生成失败");
-      }
-
-      const images = generateJson.data.images as Array<{
-        id: string;
-        url: string;
-        prompt: string;
-        style: "pixel" | "flat" | "anime";
-        type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
-        size: number;
-      }>;
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images: images.map((img) => ({
-            id: img.id,
-            base64: img.url,
-            filename: `${img.type}_${img.style}_${img.id}.png`,
-          })),
-        }),
-      });
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok || !uploadJson?.success) {
-        throw new Error(uploadJson?.error?.message || "上传失败");
-      }
-
-      const cdnById = new Map<string, string>();
-      for (const item of uploadJson.data.urls as Array<{ id: string; cdnUrl: string }>) {
-        cdnById.set(item.id, item.cdnUrl);
-      }
-
-      const persistRes = await fetch("/api/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assets: images.map((img) => ({ ...img, url: cdnById.get(img.id) || img.url, cost: 0, duration: 0, cached: false })),
-        }),
-      });
-      const persistJson = await persistRes.json();
-      if (!persistRes.ok || !persistJson?.success) {
-        throw new Error(persistJson?.error?.message || "保存失败");
-      }
-
-      await loadAssets();
-
-      gsap.to(".render-btn-glow", {
-        opacity: 0.6,
-        scale: 1.5,
-        duration: 0.5,
-        yoyo: true,
-        repeat: 1,
-        onComplete: () => gsap.set(".render-btn-glow", { opacity: 0, scale: 1 }),
-      });
+      pollTask(json.data.taskId);
     } catch (e) {
       console.error(e);
-    } finally {
       setIsGenerating(false);
+      setGenStatus("failed");
     }
-  }, [prompt, isGenerating, activeStyle, config.resolution, loadAssets]);
+  }, [prompt, isGenerating, activeStyle, config.resolution, pollTask]);
 
-  // 快捷键支持: ⌘ + Enter
+  useEffect(() => {
+    return stopPolling;
+  }, [stopPolling]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        if (prompt && !isGenerating) {
-          handleGenerate();
-        }
+        if (prompt && !isGenerating) handleGenerate();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -175,7 +171,6 @@ export default function GeneratePage() {
   useGSAP(
     () => {
       const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-
       tl.fromTo(
         ".sidebar-item",
         { x: -30, opacity: 0 },
@@ -197,40 +192,29 @@ export default function GeneratePage() {
     { scope: container },
   );
 
+  const lastResult = history[0];
+
   return (
     <div
       ref={container}
       className="w-full flex flex-col gap-8 pb-32 max-w-[1600px] mx-auto min-h-screen"
     >
-      {/* 1. Header with Breadcrumbs & Breadcrumbs */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-8 pb-2">
         <div className="sidebar-item">
           <div className="flex items-center gap-2 mb-2">
             <div className="px-2 py-0.5 rounded-md bg-[#0EA5E9]/10 text-[#0EA5E9] text-[10px] font-bold uppercase tracking-wider">
-              Editor v2.4
+              Editor v3.0
             </div>
-            <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+            <div className="w-1 h-1 rounded-full bg-gray-300" />
             <span className="text-xs text-gray-400 font-medium tracking-tight">
-              Cloud Render Active
+              Supabase Cloud
             </span>
           </div>
           <h1 className="text-3xl font-bold tracking-tighter text-gray-900">
             创作实验室
           </h1>
         </div>
-
         <div className="sidebar-item flex items-center gap-3">
-          <div className="flex -space-x-2 mr-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="w-7 h-7 rounded-full border-2 border-white bg-gray-100"
-              ></div>
-            ))}
-            <div className="w-7 h-7 rounded-full border-2 border-white bg-black text-[8px] flex items-center justify-center text-white font-bold">
-              +2k
-            </div>
-          </div>
           <Link href="/showcase">
             <Button
               variant="outline"
@@ -250,9 +234,7 @@ export default function GeneratePage() {
         </div>
       </header>
 
-      {/* 2. Three Column Layout */}
       <section className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-8 items-start">
-        {/* Left Bar - Controls */}
         <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6 sticky top-24">
           <div className="sidebar-item">
             <StyleSelector value={activeStyle} onChange={setActiveStyle} />
@@ -260,9 +242,8 @@ export default function GeneratePage() {
           <div className="sidebar-item">
             <ParamControls value={config} onChange={setConfig} />
           </div>
-
           <div className="sidebar-item glass-panel p-6 rounded-3xl bg-black border-none text-white overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-xl bg-[#0EA5E9] flex items-center justify-center">
@@ -280,41 +261,50 @@ export default function GeneratePage() {
           </div>
         </div>
 
-        {/* Center - Main Editor */}
         <div className="lg:col-span-3 xl:col-span-4 flex flex-col gap-8">
-          {/* Top Prompt Area */}
           <div className="main-preview">
-            <PromptEditor value={prompt} onChange={setPrompt} />
+            <PromptEditor
+              value={prompt}
+              onChange={setPrompt}
+              style={activeStyle}
+            />
           </div>
 
-          {/* Main Visualizer */}
           <div className="main-preview min-h-[640px] flex flex-col group">
             <div className="flex-1 relative">
               <PreviewCard
                 isGenerating={isGenerating}
-                lastResult={history[0]}
+                status={genStatus}
+                progress={genProgress}
+                lastResult={
+                  lastResult
+                    ? {
+                        url: lastResult.url,
+                        prompt: lastResult.prompt,
+                        style: lastResult.style,
+                      }
+                    : undefined
+                }
               />
 
-              {/* Floating Render Button - Luxury UX */}
+              {/* Generate Button */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
                 <div className="relative">
-                  {/* Explosion/Glow Effect on success */}
-                  <div className="render-btn-glow absolute inset-0 bg-[#0EA5E9] blur-3xl rounded-full opacity-0 pointer-events-none"></div>
-
+                  <div className="render-btn-glow absolute inset-0 bg-[#0EA5E9] blur-3xl rounded-full opacity-0 pointer-events-none" />
                   <Button
                     size="lg"
                     onClick={handleGenerate}
                     disabled={!prompt || isGenerating}
                     className="h-16 px-10 rounded-2xl bg-black hover:bg-black/90 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-lg shadow-2xl shadow-black/20 gap-4 group/btn overflow-hidden relative"
                   >
-                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                     <div className="flex items-center gap-3 relative z-10">
                       {isGenerating ? (
                         <RotateCw className="w-5 h-5 text-[#0EA5E9] animate-spin" />
                       ) : (
                         <Sparkles className="w-5 h-5 text-[#0EA5E9] fill-[#0EA5E9]" />
                       )}
-                      {isGenerating ? "正在解析艺术构思..." : "立即执行生成"}
+                      {isGenerating ? "生成中..." : "立即生成素材"}
                     </div>
                     <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black tracking-tighter relative z-10 border border-white/10">
                       ⌘ + ENTER
@@ -325,7 +315,7 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* Bottom History - Visual Strip */}
+          {/* History */}
           <div className="history-section pt-4">
             <div className="flex items-center justify-between mb-6 px-2">
               <div className="flex items-center gap-3">
@@ -337,13 +327,16 @@ export default function GeneratePage() {
                     会话资产集
                   </h3>
                   <p className="text-[10px] text-gray-400 font-medium">
-                    Session ID: 49-X0D2
+                    最近生成 · {history.length} 项
                   </p>
                 </div>
               </div>
-              <button className="text-xs font-bold text-[#0EA5E9] hover:underline transition-all ring-offset-4 rounded">
+              <Link
+                href="/showcase"
+                className="text-xs font-bold text-[#0EA5E9] hover:underline"
+              >
                 查看全部记录
-              </button>
+              </Link>
             </div>
             <HistoryBar items={history} />
           </div>

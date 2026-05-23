@@ -1,29 +1,64 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, Wand2, Eraser, Info, HelpCircle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Sparkles,
+  Wand2,
+  Eraser,
+  Info,
+  HelpCircle,
+  Check,
+  X,
+  ArrowRight,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import gsap from "gsap";
+
+interface PromptEditorProps {
+  value: string;
+  onChange: (v: string) => void;
+  style?: "pixel" | "flat" | "anime";
+}
 
 export default function PromptEditor({
   value,
   onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+  style,
+}: PromptEditorProps) {
   const [isPolishing, setIsPolishing] = useState(false);
+  const [polishedText, setPolishedText] = useState<string | null>(null);
+  const [showDiff, setShowDiff] = useState(false);
+  const polishRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showDiff && polishRef.current) {
+      gsap.fromTo(
+        polishRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" },
+      );
+    }
+  }, [showDiff]);
 
   const handleApplyPolish = async () => {
     if (!value || isPolishing) return;
     setIsPolishing(true);
+    setPolishedText(null);
+    setShowDiff(false);
+
     try {
       const res = await fetch("/api/polish", {
         method: "POST",
-        body: JSON.stringify({ prompt: value, mode: "text" }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: value, style, mode: "text" }),
       });
-      const { data } = await res.json();
-      if (data) onChange(data);
+      const json = await res.json();
+      if (json?.success && json.data?.polished) {
+        setPolishedText(json.data.polished);
+        setShowDiff(true);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -31,11 +66,22 @@ export default function PromptEditor({
     }
   };
 
+  const acceptPolish = () => {
+    if (polishedText) {
+      onChange(polishedText);
+      setPolishedText(null);
+      setShowDiff(false);
+    }
+  };
+
+  const rejectPolish = () => {
+    setPolishedText(null);
+    setShowDiff(false);
+  };
+
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Container with focus-within shadow effect */}
       <div className="relative glass-panel rounded-[2rem] bg-white border-white shadow-xl shadow-blue-500/5 transition-all duration-500 group focus-within:shadow-2xl focus-within:shadow-blue-500/10 focus-within:ring-2 focus-within:ring-[#0EA5E9]/10">
-        {/* Floating Tooltips or Badges */}
         <div className="absolute -top-3 left-8 flex items-center gap-2">
           <div className="px-3 py-1 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border border-white/20">
             <Wand2 className="w-3 h-3 text-[#0EA5E9]" />
@@ -43,7 +89,6 @@ export default function PromptEditor({
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="p-1">
           <textarea
             value={value}
@@ -53,13 +98,12 @@ export default function PromptEditor({
           />
         </div>
 
-        {/* Footer Actions */}
         <div className="h-16 px-6 border-t border-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-900 transition-all">
               <HelpCircle className="w-4 h-4" />
             </button>
-            <div className="h-4 w-px bg-gray-100"></div>
+            <div className="h-4 w-px bg-gray-100" />
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 text-[10px] font-bold text-gray-500 border border-gray-100/50">
               <Info className="w-3 h-3" />
               支持中英文输入
@@ -70,7 +114,11 @@ export default function PromptEditor({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onChange("")}
+              onClick={() => {
+                onChange("");
+                setPolishedText(null);
+                setShowDiff(false);
+              }}
               className="h-9 px-3 gap-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all font-bold text-xs"
             >
               <Eraser className="w-3.5 h-3.5" />
@@ -99,7 +147,66 @@ export default function PromptEditor({
         </div>
       </div>
 
-      {/* Suggestions / Tags */}
+      {/* Polish Result Panel */}
+      {showDiff && polishedText && (
+        <div ref={polishRef} className="overflow-hidden">
+          <div className="glass-panel rounded-2xl bg-gradient-to-r from-[#0EA5E9]/5 to-purple-500/5 border border-[#0EA5E9]/10 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center">
+                <RefreshCw className="w-3.5 h-3.5 text-[#0EA5E9]" />
+              </div>
+              <span className="text-xs font-black text-[#0EA5E9] uppercase tracking-wider">
+                AI 润色建议
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Original */}
+              <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
+                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  原始输入
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{value}</p>
+              </div>
+
+              {/* Polished */}
+              <div className="bg-white/80 rounded-xl p-4 border border-[#0EA5E9]/20 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles className="w-3 h-3 text-[#0EA5E9] fill-[#0EA5E9]" />
+                  <span className="text-[9px] font-bold text-[#0EA5E9] uppercase tracking-wider">
+                    润色结果
+                  </span>
+                </div>
+                <p className="text-xs text-gray-800 leading-relaxed font-medium">
+                  {polishedText}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={rejectPolish}
+                className="h-9 px-4 gap-2 rounded-xl text-gray-400 hover:text-red-500 font-bold text-xs"
+              >
+                <X className="w-3.5 h-3.5" />
+                拒绝
+              </Button>
+              <Button
+                size="sm"
+                onClick={acceptPolish}
+                className="h-9 px-4 gap-2 rounded-xl bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold text-xs shadow-sm"
+              >
+                <Check className="w-3.5 h-3.5" />
+                采用润色
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Suggestions */}
       <div className="flex items-center gap-3 px-4">
         <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
           Suggestions:

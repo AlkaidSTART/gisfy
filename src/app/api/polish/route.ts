@@ -28,9 +28,9 @@ export async function POST(req: Request) {
     const styleHint = style ? `，风格方向: ${styleMap[style] || style}` : "";
     const typeHint = type ? `，素材类型: ${type}` : "";
 
-    const systemPrompt = `你是专业游戏素材提示词工程师。将用户输入扩写为一段精炼的英文图像生成提示词。
+    const systemPrompt = `你是专业游戏素材提示词工程师。将用户输入扩写为一段精炼的中文图像生成提示词。
 规则：
-1. 输出纯英文，50-150词
+1. 输出纯中文，50-150词
 2. 包含画质词（masterpiece, best quality, highres）
 3. 保留用户描述的所有关键元素
 4. 明确透明背景（transparent background）
@@ -42,7 +42,7 @@ ${styleHint}${typeHint}`;
       system: systemPrompt,
       prompt: `用户原始描述: ${prompt}\n模式: ${mode || "text"}\n请输出润色后的英文提示词：`,
       temperature: 0.7,
-      maxTokens: 300,
+      maxOutputTokens: 300,
     });
 
     return ok({ polished: text.trim(), original: prompt });

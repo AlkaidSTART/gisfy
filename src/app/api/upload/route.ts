@@ -11,7 +11,11 @@ export async function POST(req: Request) {
     const json = await req.json();
     const parsed = uploadRequestSchema.safeParse(json);
     if (!parsed.success) {
-      return fail("invalid_params", parsed.error.issues[0]?.message || "参数错误", 400);
+      return fail(
+        "invalid_params",
+        parsed.error.issues[0]?.message || "参数错误",
+        400,
+      );
     }
 
     // If Supabase isn't configured, return base64 as-is
@@ -20,7 +24,10 @@ export async function POST(req: Request) {
         urls: parsed.data.images.map((item) => ({
           id: item.id,
           cdnUrl: item.base64,
-          size: Buffer.from(item.base64.replace(/^data:image\/\w+;base64,/, ""), "base64").length,
+          size: Buffer.from(
+            item.base64.replace(/^data:image\/\w+;base64,/, ""),
+            "base64",
+          ).length,
           mimeType: "image/png",
         })),
       });
