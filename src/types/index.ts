@@ -99,6 +99,34 @@ export type ApiError = {
   error: { code: string; message: string };
 };
 
+// ─── Async Task ─────────────────────────────────────
+
+export type TaskStatus =
+  | "queued"
+  | "processing"
+  | "uploading"
+  | "completed"
+  | "failed";
+
+export interface GenerateTask {
+  taskId: string;
+  status: TaskStatus;
+  progress: number;
+  prompt: string;
+  style: Style;
+  type: AssetType;
+  createdAt: string;
+  images?: Array<{
+    id: string;
+    url: string;
+    prompt: string;
+    style: Style;
+    type: AssetType;
+    size: number;
+  }>;
+  error?: string;
+}
+
 // ─── Auth ────────────────────────────────────────────
 
 export interface AuthUser {
