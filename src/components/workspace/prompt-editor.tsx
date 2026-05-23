@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Sparkles,
   Wand2,
   Eraser,
   Info,
-  HelpCircle,
   Check,
   X,
-  ArrowRight,
   RefreshCw,
+  Upload,
+  Image as ImageIcon,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,17 +22,23 @@ interface PromptEditorProps {
   value: string;
   onChange: (v: string) => void;
   style?: "pixel" | "flat" | "anime";
+  onGenerate?: () => void;
 }
 
 export default function PromptEditor({
   value,
   onChange,
   style,
+  onGenerate,
 }: PromptEditorProps) {
   const [isPolishing, setIsPolishing] = useState(false);
   const [polishedText, setPolishedText] = useState<string | null>(null);
   const [showDiff, setShowDiff] = useState(false);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [visionResult, setVisionResult] = useState<string | null>(null);
   const polishRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (showDiff && polishRef.current) {
@@ -79,6 +87,62 @@ export default function PromptEditor({
     setShowDiff(false);
   };
 
+  // Image upload + vision analysis
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUri = e.target?.result as string;
+        setReferenceImage(dataUri);
+        setIsAnalyzing(true);
+        setVisionResult(null);
+        try {
+          const formData = new FormData();
+          formData.append("image", file);
+          formData.append("prompt", value);
+          const res = await fetch("/api/vision", {
+            method: "POST",
+            body: formData,
+          });
+          const json = await res.json();
+          if (json?.success) {
+            setVisionResult(json.data.analysis);
+            onChange(json.data.contextPrompt);
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    },
+    [value, onChange],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleImageUpload(file);
+    },
+    [handleImageUpload],
+  );
+
+  const removeReference = () => {
+    setReferenceImage(null);
+    setVisionResult(null);
+  };
+
+  // Enter to generate, Shift+Enter for newline
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (value && onGenerate) onGenerate();
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="relative glass-panel rounded-[2rem] bg-white border-white shadow-xl shadow-blue-500/5 transition-all duration-500 group focus-within:shadow-2xl focus-within:shadow-blue-500/10 focus-within:ring-2 focus-within:ring-[#0EA5E9]/10">
@@ -93,20 +157,76 @@ export default function PromptEditor({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="描述您想生成的素材，例如：一个穿着蓝色盔甲的像素风骑士..."
+            onKeyDown={handleKeyDown}
+            placeholder="描述您想生成的素材，例如：一个穿着蓝色盔甲的像素风骑士... Enter发送 / Shift+Enter换行"
             className="w-full h-32 p-7 bg-transparent border-none focus:ring-0 text-gray-800 placeholder:text-gray-300 font-medium leading-relaxed resize-none scrollbar-hide text-md"
           />
         </div>
 
+        {/* Reference Image Preview */}
+        {referenceImage && (
+          <div className="px-7 pb-3 flex items-center gap-3">
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shrink-0">
+              <img
+                src={referenceImage}
+                alt="参考图"
+                className="w-full h-full object-cover"
+              />
+              {isAnalyzing && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              {isAnalyzing ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#0EA5E9] animate-pulse" />
+                  <span className="text-[10px] font-bold text-[#0EA5E9]">
+                    AI 正在分析参考图...
+                  </span>
+                </div>
+              ) : visionResult ? (
+                <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">
+                  {visionResult}
+                </p>
+              ) : null}
+            </div>
+            <button
+              onClick={removeReference}
+              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="h-16 px-6 border-t border-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-900 transition-all">
-              <HelpCircle className="w-4 h-4" />
+            {/* Upload reference image */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-xl hover:bg-blue-50 text-gray-400 hover:text-[#0EA5E9] transition-all flex items-center gap-1.5"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="text-[9px] font-bold hidden sm:inline">
+                参考图
+              </span>
             </button>
-            <div className="h-4 w-px bg-gray-100" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f);
+              }}
+            />
+            <div className="h-4 w-px bg-gray-100"></div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 text-[10px] font-bold text-gray-500 border border-gray-100/50">
               <Info className="w-3 h-3" />
-              支持中英文输入
+              Enter 发送 · Shift+Enter 换行
             </div>
           </div>
 
@@ -118,6 +238,8 @@ export default function PromptEditor({
                 onChange("");
                 setPolishedText(null);
                 setShowDiff(false);
+                setReferenceImage(null);
+                setVisionResult(null);
               }}
               className="h-9 px-3 gap-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all font-bold text-xs"
             >
@@ -156,7 +278,7 @@ export default function PromptEditor({
                 <RefreshCw className="w-3.5 h-3.5 text-[#0EA5E9]" />
               </div>
               <span className="text-xs font-black text-[#0EA5E9] uppercase tracking-wider">
-                AI 润色建议
+                AI 润色建议（中文）
               </span>
             </div>
 
@@ -211,7 +333,7 @@ export default function PromptEditor({
         <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
           Suggestions:
         </span>
-        {["Cyberpunk", "Dungeon Boss", "Magical Item", "UI Icon"].map((tag) => (
+        {["赛博朋克", "地牢Boss", "魔法道具", "UI图标"].map((tag) => (
           <button
             key={tag}
             onClick={() => onChange(value ? `${value}, ${tag}` : tag)}

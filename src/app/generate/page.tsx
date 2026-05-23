@@ -45,9 +45,12 @@ export default function GeneratePage() {
 
   const loadAssets = useCallback(async () => {
     try {
-      const res = await fetch("/api/assets?page=1&limit=20&sort=newest", {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        "/api/assets?page=1&limit=20&sort=newest&userId=default",
+        {
+          cache: "no-store",
+        },
+      );
       const json = await res.json();
       if (!json?.success) return;
       const items: Asset[] = json.data.assets.map(
@@ -151,16 +154,6 @@ export default function GeneratePage() {
   useEffect(() => {
     return stopPolling;
   }, [stopPolling]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        if (prompt && !isGenerating) handleGenerate();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prompt, isGenerating, handleGenerate]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -267,6 +260,7 @@ export default function GeneratePage() {
               value={prompt}
               onChange={setPrompt}
               style={activeStyle}
+              onGenerate={handleGenerate}
             />
           </div>
 
@@ -307,7 +301,7 @@ export default function GeneratePage() {
                       {isGenerating ? "生成中..." : "立即生成素材"}
                     </div>
                     <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black tracking-tighter relative z-10 border border-white/10">
-                      ⌘ + ENTER
+                      ENTER
                     </div>
                   </Button>
                 </div>

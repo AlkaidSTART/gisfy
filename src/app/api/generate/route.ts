@@ -97,7 +97,7 @@ async function runGeneration(
       duration: (Date.now() - startedAt) / 1000,
       createdAt: new Date().toISOString(),
     }));
-    upsertAssets(assets);
+    upsertAssets(json.userId || "default", assets);
 
     updateTask(task.taskId, {
       status: "completed",
