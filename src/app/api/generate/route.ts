@@ -13,21 +13,31 @@ function mockBase64Png() {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=";
 }
 
-async function runGeneration(task: GenerateTask, body: {
-  prompt: string;
-  style: "pixel" | "flat" | "anime";
-  type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
-  size: 64 | 128 | 256 | 512;
-  count: 1 | 4 | 9;
-  seed?: number;
-}) {
+async function runGeneration(
+  task: GenerateTask,
+  body: {
+    prompt: string;
+    style: "pixel" | "flat" | "anime";
+    type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+    size: 64 | 128 | 256 | 512;
+    count: 1 | 4 | 9;
+    seed?: number;
+  },
+) {
   try {
     updateTask(task.taskId, { status: "processing", progress: 20 });
 
     const built = buildPrompt(body);
     const startedAt = Date.now();
 
-    let images: Array<{ id: string; url: string; prompt: string; style: typeof body.style; type: typeof body.type; size: number }>;
+    let images: Array<{
+      id: string;
+      url: string;
+      prompt: string;
+      style: typeof body.style;
+      type: typeof body.type;
+      size: number;
+    }>;
 
     // Mock mode when no API key
     if (!process.env.ALI_API_KEY) {
@@ -50,9 +60,7 @@ async function runGeneration(task: GenerateTask, body: {
 
       images = aiResult.images.map((img) => ({
         id: `gisfy_${randomUUID().slice(0, 8)}`,
-        url: img.base64
-          ? `data:image/png;base64,${img.base64}`
-          : "",
+        url: img.base64 ? `data:image/png;base64,${img.base64}` : "",
         prompt: body.prompt,
         style: body.style,
         type: body.type,
@@ -107,7 +115,11 @@ export async function POST(req: Request) {
     const json = await req.json();
     const parsed = generateRequestSchema.safeParse(json);
     if (!parsed.success) {
-      return fail("invalid_params", parsed.error.issues[0]?.message || "参数错误", 400);
+      return fail(
+        "invalid_params",
+        parsed.error.issues[0]?.message || "参数错误",
+        400,
+      );
     }
 
     const body = parsed.data;

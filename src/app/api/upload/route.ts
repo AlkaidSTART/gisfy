@@ -1,6 +1,6 @@
 import { uploadRequestSchema } from "@/types";
 import { fail, ok } from "@/lib/response";
-import { uploadBase64ToQiniu } from "@/lib/qiniu";
+import { uploadToSupabase } from "@/lib/supabase-storage";
 
 function filenameFromId(id: string) {
   return `${id}_${Date.now()}.png`;
@@ -14,12 +14,13 @@ export async function POST(req: Request) {
       return fail("invalid_params", parsed.error.issues[0]?.message || "参数错误", 400);
     }
 
-    if (!process.env.QINIU_ACCESS_KEY) {
+    // If Supabase isn't configured, return base64 as-is
+    if (!process.env.SUPABASE_URL) {
       return ok({
         urls: parsed.data.images.map((item) => ({
           id: item.id,
           cdnUrl: item.base64,
-          size: Buffer.from(item.base64.replace(/^data:image\/png;base64,/, ""), "base64").length,
+          size: Buffer.from(item.base64.replace(/^data:image\/\w+;base64,/, ""), "base64").length,
           mimeType: "image/png",
         })),
       });
@@ -27,16 +28,16 @@ export async function POST(req: Request) {
 
     const urls = await Promise.all(
       parsed.data.images.map(async (item) => {
-        const uploaded = await uploadBase64ToQiniu({
-          key: item.filename || filenameFromId(item.id),
-          base64: item.base64,
-        });
-
-        return {
+        const uploaded = await uploadToSupabase({
           id: item.id,
+          base64: item.base64,
+          filename: item.filename || filenameFromId(item.id),
+        });
+        return {
+          id: uploaded.id,
           cdnUrl: uploaded.cdnUrl,
           size: uploaded.size,
-          mimeType: uploaded.mimeType,
+          mimeType: "image/png",
         };
       }),
     );
