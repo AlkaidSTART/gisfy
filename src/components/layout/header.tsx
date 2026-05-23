@@ -22,12 +22,6 @@ export default function Header() {
         
         {/* Central Nav Links */}
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/gallery" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
-            资产画廊
-          </Link>
-          <Link href="/docs" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
-            接入文档
-          </Link>
           <Link href="/generate" className="text-sm text-gray-500 hover:text-black font-medium transition-colors">
             工作台
           </Link>
@@ -35,10 +29,6 @@ export default function Header() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:text-black font-medium transition-colors hidden sm:inline-block">
-            控制台
-          </Link>
-          <div className="w-px h-4 bg-gray-200 mx-1 hidden sm:block"></div>
           <Link href="/generate">
             <Button size="sm" className="hidden sm:inline-flex">开始创作</Button>
           </Link>

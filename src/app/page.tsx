@@ -51,7 +51,7 @@ export default function Home() {
       
       {/* Hero Section */}
       <section className="text-center w-full max-w-4xl mx-auto flex flex-col items-center pt-10 pb-20">
-        <div className="hero-badge inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-(--color-border) bg-white shadow-sm text-xs font-medium text-gray-600">
+        <div className="hero-badge inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-border/50 bg-white shadow-sm text-xs font-medium text-gray-600">
           <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
           生成引擎 V2.0 现已上线
         </div>
@@ -71,11 +71,6 @@ export default function Home() {
           <Link href="/generate">
             <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-[#0EA5E9]/20 gap-2">
               进入工作台 <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-          <Link href="/gallery">
-            <Button variant="secondary" size="lg" className="h-12 px-8 text-base">
-              浏览资产库
             </Button>
           </Link>
         </div>
