@@ -13,16 +13,44 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function PreviewCard() {
+import { cn } from "@/lib/utils";
+import Image from "next/image";
+
+interface PreviewCardProps {
+  isGenerating: boolean;
+  lastResult?: {
+    url: string;
+    prompt: string;
+    style: string;
+  };
+}
+
+export default function PreviewCard({
+  isGenerating,
+  lastResult,
+}: PreviewCardProps) {
   return (
     <div className="w-full h-full glass-panel rounded-[2.5rem] flex flex-col overflow-hidden relative border-white bg-white/40 shadow-2xl shadow-blue-500/5 min-h-[640px]">
       {/* 1. Header Toolbar */}
       <div className="h-16 border-b border-white/60 flex items-center justify-between px-8 bg-white/20 backdrop-blur-sm z-20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)] animate-pulse"></div>
+            <div
+              className={cn(
+                "w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)] transition-colors duration-500",
+                isGenerating
+                  ? "bg-amber-500 animate-spin"
+                  : lastResult
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-gray-300",
+              )}
+            ></div>
             <span className="text-[11px] font-black uppercase tracking-widest text-gray-900">
-              Live Preview
+              {isGenerating
+                ? "Processing..."
+                : lastResult
+                  ? "Live Preview"
+                  : "Standby"}
             </span>
           </div>
           <div className="h-4 w-px bg-gray-300/50"></div>
@@ -74,14 +102,16 @@ export default function PreviewCard() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl bg-white border border-border/40 shadow-sm text-gray-600 hover:text-black hover:shadow-md transition-all"
+            disabled={!lastResult}
+            className="h-10 w-10 rounded-xl bg-white border border-border/40 shadow-sm text-gray-600 hover:text-black hover:shadow-md transition-all disabled:opacity-30"
           >
             <Share2 className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-xl bg-white border border-border/40 shadow-sm text-gray-600 hover:text-black hover:shadow-md transition-all"
+            disabled={!lastResult}
+            className="h-10 w-10 rounded-xl bg-white border border-border/40 shadow-sm text-gray-600 hover:text-black hover:shadow-md transition-all disabled:opacity-30"
           >
             <Maximize2 className="w-4 h-4" />
           </Button>
@@ -99,6 +129,79 @@ export default function PreviewCard() {
             backgroundSize: "24px 24px",
           }}
         ></div>
+
+        {/* Loading Overlay */}
+        {isGenerating && (
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-8">
+            <div className="relative">
+              {/* Spinning Ring */}
+              <div className="w-32 h-32 rounded-full border-[3px] border-blue-100 animate-[spin_3s_linear_infinite]"></div>
+              <div className="absolute inset-0 w-32 h-32 rounded-full border-[3px] border-transparent border-t-[#0EA5E9] animate-spin"></div>
+
+              {/* Inner Sparkle */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-[#0EA5E9] animate-pulse" />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm font-black text-gray-900 tracking-tight">
+                AI 正在注入灵魂
+              </span>
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Progress Tip */}
+            <div className="px-6 py-2 rounded-full bg-white/80 border border-white shadow-sm">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                DashScope Engine v2.1
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Content Area */}
+        {lastResult ? (
+          <div className="relative z-0 group/img">
+            <div className="absolute -inset-10 bg-[#0EA5E9]/5 blur-[100px] opacity-0 group-hover/img:opacity-100 transition-opacity duration-1000"></div>
+            <div className="relative z-10 w-full max-w-[1024px] aspect-square">
+              <Image
+                src={lastResult.url}
+                alt={lastResult.prompt}
+                fill
+                className="max-w-full max-h-[500px] rounded-3xl shadow-2xl hover:scale-[1.02] transition-transform duration-700 object-contain"
+                unoptimized
+              />
+            </div>
+
+            {/* Download Button Overlay */}
+            <div className="absolute bottom-6 right-6 z-20 opacity-0 group-hover/img:opacity-100 translate-y-2 group-hover/img:translate-y-0 transition-all duration-300">
+              <Button className="rounded-2xl bg-black text-white px-6 py-6 shadow-2xl gap-3">
+                <Download className="w-5 h-5" />
+                下载 Alpha PNG
+              </Button>
+            </div>
+          </div>
+        ) : (
+          !isGenerating && (
+            <div className="flex flex-col items-center gap-6 opacity-20">
+              <div className="w-32 h-32 rounded-[2.5rem] bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                <Layers className="w-12 h-12 text-gray-400" />
+              </div>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Wait for input...
+              </span>
+            </div>
+          )
+        )}
 
         {/* Floating Grid Lines */}
         <div

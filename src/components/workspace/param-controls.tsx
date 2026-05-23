@@ -2,7 +2,22 @@
 
 import { Settings2, Layers, Monitor, Info } from "lucide-react";
 
-export default function ParamControls() {
+import { cn } from "@/lib/utils";
+
+interface ParamControlsProps {
+  value: {
+    transparent: boolean;
+    resolution: number;
+    enhancement: boolean;
+  };
+  onChange: (val: {
+    transparent: boolean;
+    resolution: number;
+    enhancement: boolean;
+  }) => void;
+}
+
+export default function ParamControls({ value, onChange }: ParamControlsProps) {
   return (
     <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border-white bg-white/60">
       <div className="flex items-center justify-between px-1">
@@ -32,11 +47,27 @@ export default function ParamControls() {
             </span>
           </div>
           <div className="p-1.5 bg-gray-50/50 border border-border/40 rounded-2xl grid grid-cols-2 gap-1">
-            <button className="py-2.5 rounded-xl bg-white shadow-sm border border-border/20 text-[11px] font-bold text-gray-900">
+            <button
+              onClick={() => onChange({ ...value, transparent: true })}
+              className={cn(
+                "py-2.5 rounded-xl text-[11px] font-bold transition-all",
+                value.transparent
+                  ? "bg-white shadow-sm border border-border/20 text-gray-900"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
+            >
               透明背景 (PNG)
             </button>
-            <button className="py-2.5 rounded-xl text-[11px] font-bold text-gray-400 hover:text-gray-600 transition-colors">
-              保留北京 (JPG)
+            <button
+              onClick={() => onChange({ ...value, transparent: false })}
+              className={cn(
+                "py-2.5 rounded-xl text-[11px] font-bold transition-all",
+                !value.transparent
+                  ? "bg-white shadow-sm border border-border/20 text-gray-900"
+                  : "text-gray-400 hover:text-gray-600",
+              )}
+            >
+              保留背景 (JPG)
             </button>
           </div>
         </div>
@@ -49,25 +80,74 @@ export default function ParamControls() {
               解析度
             </label>
             <span className="text-[11px] font-mono font-bold text-gray-900">
-              1024<span className="text-gray-300 mx-1">x</span>1024
+              {value.resolution}
+              <span className="text-gray-300 mx-1">x</span>
+              {value.resolution}
             </span>
           </div>
 
           <div className="px-1">
-            <div className="relative w-full h-1.5 bg-gray-100 rounded-full">
-              <div className="absolute left-0 top-0 h-full bg-black w-[40%] rounded-full"></div>
-              <div className="absolute left-[40%] top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-[3px] border-black rounded-full shadow-lg cursor-pointer"></div>
+            <div
+              className="relative w-full h-1.5 bg-gray-100 rounded-full cursor-pointer"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const ratio = x / rect.width;
+                let res = 1024;
+                if (ratio < 0.33) res = 512;
+                else if (ratio < 0.66) res = 1024;
+                else res = 2048;
+                onChange({ ...value, resolution: res });
+              }}
+            >
+              <div
+                className="absolute left-0 top-0 h-full bg-black rounded-full"
+                style={{
+                  width:
+                    value.resolution === 512
+                      ? "10%"
+                      : value.resolution === 1024
+                        ? "50%"
+                        : "100%",
+                }}
+              ></div>
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white border-[3px] border-black rounded-full shadow-lg transition-all"
+                style={{
+                  left:
+                    value.resolution === 512
+                      ? "10%"
+                      : value.resolution === 1024
+                        ? "50%"
+                        : "100%",
+                }}
+              ></div>
             </div>
             <div className="flex justify-between text-[9px] font-bold text-gray-300 mt-3 uppercase tracking-tighter">
-              <span>Standard</span>
-              <span>HD+</span>
-              <span>4K Ultra</span>
+              <span className={cn(value.resolution === 512 && "text-gray-900")}>
+                Standard
+              </span>
+              <span
+                className={cn(value.resolution === 1024 && "text-gray-900")}
+              >
+                HD+
+              </span>
+              <span
+                className={cn(value.resolution === 2048 && "text-gray-900")}
+              >
+                4K Ultra
+              </span>
             </div>
           </div>
         </div>
 
         {/* Extra Params */}
-        <div className="flex items-center justify-between pt-4 border-t border-border/40">
+        <div
+          className="flex items-center justify-between pt-4 border-t border-border/40 cursor-pointer"
+          onClick={() =>
+            onChange({ ...value, enhancement: !value.enhancement })
+          }
+        >
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-gray-900">
               高级细节增强
@@ -76,8 +156,18 @@ export default function ParamControls() {
               Auto Enhancement v2
             </span>
           </div>
-          <div className="w-9 h-5 bg-[#0EA5E9] rounded-full relative p-0.5 shadow-inner">
-            <div className="absolute right-0.5 top-0.5 bottom-0.5 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+          <div
+            className={cn(
+              "w-9 h-5 rounded-full relative p-0.5 shadow-inner transition-colors",
+              value.enhancement ? "bg-[#0EA5E9]" : "bg-gray-200",
+            )}
+          >
+            <div
+              className={cn(
+                "absolute top-0.5 bottom-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all",
+                value.enhancement ? "right-0.5" : "left-0.5",
+              )}
+            ></div>
           </div>
         </div>
       </div>

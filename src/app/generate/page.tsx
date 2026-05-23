@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import StyleSelector from "@/components/workspace/style-selector";
 import PromptEditor from "@/components/workspace/prompt-editor";
 import ParamControls from "@/components/workspace/param-controls";
 import PreviewCard from "@/components/workspace/preview-card";
 import HistoryBar from "@/components/workspace/history-bar";
-import { LayoutGrid, Zap, Sparkles, Box, Info } from "lucide-react";
+import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import gsap from "gsap";
@@ -14,8 +14,73 @@ import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(useGSAP);
 
+interface Asset {
+  id: string;
+  url: string;
+  prompt: string;
+  style: string;
+  timestamp: string;
+}
+
 export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
+
+  // --- 状态管理 ---
+  const [activeStyle, setActiveStyle] = useState("pixel");
+  const [prompt, setPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [config, setConfig] = useState({
+    transparent: true,
+    resolution: 1024,
+    enhancement: true,
+  });
+  const [history, setHistory] = useState<Asset[]>([]);
+
+  // --- 模拟生成逻辑 ---
+  const handleGenerate = useCallback(async () => {
+    if (!prompt || isGenerating) return;
+
+    setIsGenerating(true);
+
+    // 模拟 3 秒生成时间
+    setTimeout(() => {
+      const newAsset = {
+        id: String(Date.now()),
+        // 使用一个带有随机参数的 placeholder 图片，模拟不同结果
+        url: `https://picsum.photos/seed/${Date.now()}/800/800`,
+        prompt,
+        style: activeStyle,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+
+      setHistory((prev) => [newAsset, ...prev]);
+      setIsGenerating(false);
+
+      // 成功动效提示
+      gsap.to(".render-btn-glow", {
+        opacity: 0.6,
+        scale: 1.5,
+        duration: 0.5,
+        yoyo: true,
+        repeat: 1,
+        onComplete: () =>
+          gsap.set(".render-btn-glow", { opacity: 0, scale: 1 }),
+      });
+    }, 3000);
+  }, [prompt, isGenerating, activeStyle]);
+
+  // 快捷键支持: ⌘ + Enter
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        if (prompt && !isGenerating) {
+          handleGenerate();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [prompt, isGenerating, handleGenerate]);
 
   useGSAP(
     () => {
@@ -82,7 +147,7 @@ export default function GeneratePage() {
               className="h-10 gap-2 rounded-xl bg-white border-border/60 text-xs font-bold shadow-sm hover:shadow-md transition-all"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              探索图库库
+              探索图库
             </Button>
           </Link>
           <Button
@@ -100,10 +165,10 @@ export default function GeneratePage() {
         {/* Left Bar - Controls */}
         <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6 sticky top-24">
           <div className="sidebar-item">
-            <StyleSelector />
+            <StyleSelector value={activeStyle} onChange={setActiveStyle} />
           </div>
           <div className="sidebar-item">
-            <ParamControls />
+            <ParamControls value={config} onChange={setConfig} />
           </div>
 
           <div className="sidebar-item glass-panel p-6 rounded-3xl bg-black border-none text-white overflow-hidden relative group">
@@ -129,29 +194,43 @@ export default function GeneratePage() {
         <div className="lg:col-span-3 xl:col-span-4 flex flex-col gap-8">
           {/* Top Prompt Area */}
           <div className="main-preview">
-            <PromptEditor />
+            <PromptEditor value={prompt} onChange={setPrompt} />
           </div>
 
           {/* Main Visualizer */}
           <div className="main-preview min-h-[640px] flex flex-col group">
             <div className="flex-1 relative">
-              <PreviewCard />
+              <PreviewCard
+                isGenerating={isGenerating}
+                lastResult={history[0]}
+              />
 
               {/* Floating Render Button - Luxury UX */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
-                <Button
-                  size="lg"
-                  className="h-16 px-10 rounded-2xl bg-black hover:bg-black/90 text-white font-bold text-lg shadow-2xl shadow-black/20 gap-4 group/btn overflow-hidden relative"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
-                  <div className="flex items-center gap-3 relative z-10">
-                    <Sparkles className="w-5 h-5 text-[#0EA5E9] fill-[#0EA5E9]" />
-                    立即执行生成
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black tracking-tighter relative z-10 border border-white/10">
-                    ⌘ + ENTER
-                  </div>
-                </Button>
+                <div className="relative">
+                  {/* Explosion/Glow Effect on success */}
+                  <div className="render-btn-glow absolute inset-0 bg-[#0EA5E9] blur-3xl rounded-full opacity-0 pointer-events-none"></div>
+
+                  <Button
+                    size="lg"
+                    onClick={handleGenerate}
+                    disabled={!prompt || isGenerating}
+                    className="h-16 px-10 rounded-2xl bg-black hover:bg-black/90 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-lg shadow-2xl shadow-black/20 gap-4 group/btn overflow-hidden relative"
+                  >
+                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                    <div className="flex items-center gap-3 relative z-10">
+                      {isGenerating ? (
+                        <RotateCw className="w-5 h-5 text-[#0EA5E9] animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5 text-[#0EA5E9] fill-[#0EA5E9]" />
+                      )}
+                      {isGenerating ? "正在解析艺术构思..." : "立即执行生成"}
+                    </div>
+                    <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black tracking-tighter relative z-10 border border-white/10">
+                      ⌘ + ENTER
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -176,7 +255,7 @@ export default function GeneratePage() {
                 查看全部记录
               </button>
             </div>
-            <HistoryBar />
+            <HistoryBar items={history} />
           </div>
         </div>
       </section>

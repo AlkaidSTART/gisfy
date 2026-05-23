@@ -30,9 +30,12 @@ const STYLES = [
   },
 ];
 
-export default function StyleSelector() {
-  const activeId = "pixel";
+interface StyleSelectorProps {
+  value: string;
+  onChange: (id: string) => void;
+}
 
+export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
   return (
     <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border-white bg-white/60">
       <div className="flex items-center justify-between px-1">
@@ -51,12 +54,13 @@ export default function StyleSelector() {
 
       <div className="flex flex-col gap-3">
         {STYLES.map((style) => {
-          const isActive = style.id === activeId;
+          const isActive = style.id === value;
           const Icon = style.icon;
 
           return (
             <button
               key={style.id}
+              onClick={() => onChange(style.id)}
               className={cn(
                 "group relative w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 overflow-hidden",
                 isActive

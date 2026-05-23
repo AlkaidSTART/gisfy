@@ -7,10 +7,18 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 
-export default function HistoryBar() {
-  // Mock history slots
-  const slots = Array.from({ length: 12 });
+import Image from "next/image";
 
+interface HistoryBarProps {
+  items: Array<{
+    id: string;
+    url: string;
+    style: string;
+    prompt: string;
+  }>;
+}
+
+export default function HistoryBar({ items }: HistoryBarProps) {
   return (
     <div className="relative group">
       {/* Ambient glow behind history */}
@@ -28,40 +36,54 @@ export default function HistoryBar() {
         </div>
 
         {/* History Slots */}
-        {slots.slice(1).map((_, i) => (
+        {items.map((item) => (
           <div
-            key={i}
+            key={item.id}
             className="snap-start shrink-0 w-32 h-32 rounded-[2rem] glass-panel bg-white border-white/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer relative group/item overflow-hidden"
           >
             {/* Thumbnail placeholder */}
             <div className="absolute inset-0 bg-[#F1F5F9] flex items-center justify-center">
-              {i % 3 === 0 ? (
+              {item.url ? (
+                <Image
+                  src={item.url}
+                  alt={item.prompt}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                   <ImageIcon className="w-8 h-8 text-blue-200/60" />
-                </div>
-              ) : (
-                <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-200"></div>
                 </div>
               )}
             </div>
 
             {/* Hover Toolbar */}
             <div className="absolute inset-x-0 bottom-0 p-2 bg-black/80 backdrop-blur-md translate-y-full group-hover/item:translate-y-0 transition-transform duration-300 flex items-center justify-between">
-              <span className="text-[8px] font-bold text-white uppercase ml-1">
-                Asset_{i + 1}
+              <span className="text-[8px] font-bold text-white uppercase ml-1 block max-w-[80px] truncate">
+                {item.prompt || "无名素材"}
               </span>
               <button className="p-1 rounded-md bg-white/10 text-white hover:bg-white/20">
                 <MoreHorizontal className="w-3 h-3" />
               </button>
             </div>
 
-            {/* Badge */}
-            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md shadow-sm border border-black/5 text-[8px] font-black tracking-tighter opacity-0 group-hover/item:opacity-100 transition-opacity">
-              03/24
+            {/* Style Badge */}
+            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md shadow-sm border border-black/5 text-[8px] font-black tracking-tighter uppercase">
+              {item.style}
             </div>
           </div>
         ))}
+
+        {/* Placeholder slots to keep the visual balance if history is short */}
+        {items.length < 5 &&
+          Array.from({ length: 5 - items.length }).map((_, i) => (
+            <div
+              key={`placeholder-${i}`}
+              className="snap-start shrink-0 w-32 h-32 rounded-[2rem] border border-dashed border-gray-100/50 bg-gray-50/10 flex items-center justify-center opacity-50"
+            >
+              <ImageIcon className="w-6 h-6 text-gray-100" />
+            </div>
+          ))}
 
         {/* View All Button */}
         <div className="snap-start shrink-0 h-32 flex flex-col items-center justify-center px-8 border-l border-border/40 ml-4 h-full">
