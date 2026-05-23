@@ -23,6 +23,7 @@ async function runGeneration(
     count: 1 | 4 | 9;
     seed?: number;
   },
+  userId = "default",
 ) {
   try {
     updateTask(task.taskId, { status: "processing", progress: 20 });
@@ -53,7 +54,7 @@ async function runGeneration(
     } else {
       const aiResult = await generateWithAli({
         prompt: built.prompt,
-        size: body.size,
+        size: Math.max(body.size, 512), // wanx2.1-t2i-turbo minimum is 512
         count: body.count,
         seed: body.seed,
       });
@@ -97,7 +98,7 @@ async function runGeneration(
       duration: (Date.now() - startedAt) / 1000,
       createdAt: new Date().toISOString(),
     }));
-    upsertAssets(json.userId || "default", assets);
+    upsertAssets(userId, assets);
 
     updateTask(task.taskId, {
       status: "completed",
@@ -105,7 +106,11 @@ async function runGeneration(
       images: uploaded,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "生成失败";
+    const message =
+      error instanceof Error
+        ? error.message || error.constructor.name
+        : "生成失败";
+    console.error("[generate] async error:", message, JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     updateTask(task.taskId, { status: "failed", progress: 0, error: message });
   }
 }
@@ -123,6 +128,7 @@ export async function POST(req: Request) {
     }
 
     const body = parsed.data;
+    const userId = (json as { userId?: string }).userId || "default";
     const taskId = `task_${randomUUID().slice(0, 8)}`;
 
     const task: GenerateTask = {
@@ -138,7 +144,7 @@ export async function POST(req: Request) {
     createTask(task);
 
     // Fire-and-forget async generation
-    runGeneration(task, body);
+    runGeneration(task, body, userId);
 
     return ok({ taskId, status: "queued" });
   } catch (error) {

@@ -2,7 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redis } from "@/lib/redis";
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "gisfy-dev-secret-do-not-use-in-production",
+);
 const COOKIE_NAME = "gisfy_sid";
 const SESSION_TTL = 60 * 60 * 24 * 7; // 7 天
 const SESSION_PREFIX = "session:";
