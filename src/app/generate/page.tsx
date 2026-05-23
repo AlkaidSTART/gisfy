@@ -18,7 +18,9 @@ interface Asset {
   id: string;
   url: string;
   prompt: string;
-  style: string;
+  style: "pixel" | "flat" | "anime";
+  type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+  size: number;
   timestamp: string;
 }
 
@@ -26,51 +28,135 @@ export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
 
   // --- 状态管理 ---
-  const [activeStyle, setActiveStyle] = useState("pixel");
+  const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">("pixel");
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [config, setConfig] = useState({
     transparent: true,
-    resolution: 1024,
+    resolution: 256,
     enhancement: true,
   });
   const [history, setHistory] = useState<Asset[]>([]);
 
-  // --- 模拟生成逻辑 ---
+  const loadAssets = useCallback(async () => {
+    try {
+      const res = await fetch("/api/assets?page=1&limit=20&sort=newest", {
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (!json?.success) return;
+
+      const items: Asset[] = json.data.assets.map((a: {
+        id: string;
+        cdnUrl: string;
+        prompt: string;
+        style: "pixel" | "flat" | "anime";
+        type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+        size: number;
+        createdAt: string;
+      }) => ({
+        id: a.id,
+        url: a.cdnUrl,
+        prompt: a.prompt,
+        style: a.style,
+        type: a.type,
+        size: a.size,
+        timestamp: a.createdAt,
+      }));
+
+      setHistory(items);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  // --- 真实生成逻辑 ---
   const handleGenerate = useCallback(async () => {
     if (!prompt || isGenerating) return;
 
     setIsGenerating(true);
 
-    // 模拟 3 秒生成时间
-    setTimeout(() => {
-      const newAsset = {
-        id: String(Date.now()),
-        // 使用一个带有随机参数的 placeholder 图片，模拟不同结果
-        url: `https://picsum.photos/seed/${Date.now()}/800/800`,
-        prompt,
-        style: activeStyle,
-        timestamp: new Date().toLocaleTimeString(),
-      };
+    try {
+      const generateRes = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          style: activeStyle,
+          type: "character",
+          size: config.resolution,
+          count: 1,
+        }),
+      });
 
-      setHistory((prev) => [newAsset, ...prev]);
-      setIsGenerating(false);
+      const generateJson = await generateRes.json();
+      if (!generateRes.ok || !generateJson?.success) {
+        throw new Error(generateJson?.error?.message || "生成失败");
+      }
 
-      // 成功动效提示
+      const images = generateJson.data.images as Array<{
+        id: string;
+        url: string;
+        prompt: string;
+        style: "pixel" | "flat" | "anime";
+        type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+        size: number;
+      }>;
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          images: images.map((img) => ({
+            id: img.id,
+            base64: img.url,
+            filename: `${img.type}_${img.style}_${img.id}.png`,
+          })),
+        }),
+      });
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || !uploadJson?.success) {
+        throw new Error(uploadJson?.error?.message || "上传失败");
+      }
+
+      const cdnById = new Map<string, string>();
+      for (const item of uploadJson.data.urls as Array<{ id: string; cdnUrl: string }>) {
+        cdnById.set(item.id, item.cdnUrl);
+      }
+
+      const persistRes = await fetch("/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assets: images.map((img) => ({ ...img, url: cdnById.get(img.id) || img.url, cost: 0, duration: 0, cached: false })),
+        }),
+      });
+      const persistJson = await persistRes.json();
+      if (!persistRes.ok || !persistJson?.success) {
+        throw new Error(persistJson?.error?.message || "保存失败");
+      }
+
+      await loadAssets();
+
       gsap.to(".render-btn-glow", {
         opacity: 0.6,
         scale: 1.5,
         duration: 0.5,
         yoyo: true,
         repeat: 1,
-        onComplete: () =>
-          gsap.set(".render-btn-glow", { opacity: 0, scale: 1 }),
+        onComplete: () => gsap.set(".render-btn-glow", { opacity: 0, scale: 1 }),
       });
-    }, 3000);
-  }, [prompt, isGenerating, activeStyle]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [prompt, isGenerating, activeStyle, config.resolution, loadAssets]);
 
   // 快捷键支持: ⌘ + Enter
   useEffect(() => {
+    loadAssets();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         if (prompt && !isGenerating) {
@@ -80,7 +166,7 @@ export default function GeneratePage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prompt, isGenerating, handleGenerate]);
+  }, [prompt, isGenerating, handleGenerate, loadAssets]);
 
   useGSAP(
     () => {
