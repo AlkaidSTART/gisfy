@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_SC, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/layout/header";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,7 +33,12 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${inter.variable} ${notoSansSC.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      <body className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex-1 flex flex-col items-center py-6 px-4 md:px-8 w-full max-w-7xl mx-auto animate-fade-in">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
