@@ -155,8 +155,6 @@ export default function GeneratePage() {
 
   // 快捷键支持: ⌘ + Enter
   useEffect(() => {
-    loadAssets();
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         if (prompt && !isGenerating) {
@@ -166,7 +164,13 @@ export default function GeneratePage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prompt, isGenerating, handleGenerate, loadAssets]);
+  }, [prompt, isGenerating, handleGenerate]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadAssets();
+    });
+  }, [loadAssets]);
 
   useGSAP(
     () => {

@@ -28,11 +28,11 @@ const STYLES = [
     color: "from-purple-500 to-pink-500",
     bg: "bg-purple-50",
   },
-];
+] as const;
 
 interface StyleSelectorProps {
-  value: string;
-  onChange: (id: string) => void;
+  value: "pixel" | "flat" | "anime";
+  onChange: (id: "pixel" | "flat" | "anime") => void;
 }
 
 export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
