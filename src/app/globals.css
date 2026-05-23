@@ -1,25 +1,81 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Fonts */
   --font-sans: var(--font-inter), var(--font-noto-sans-sc), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
-}
-  to { opacity: 1; transform: scale(1); }
+  
+  /* Brand visual token variables */
+  /* Backgrounds */
+  --color-background: #FAFAFC;
+  --color-foreground: #111111;
+  --color-card: rgba(255, 255, 255, 0.7);
+  --color-card-solid: #FFFFFF;
+  --color-muted: #F1F1F4;
+  --color-muted-foreground: #71717A;
+  
+  /* Accent: Light Blue */
+  --color-primary: #0EA5E9;
+  --color-primary-hover: #0284C7;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-secondary: rgba(244, 244, 245, 0.8);
+  --color-secondary-hover: rgba(228, 228, 231, 0.9);
+  --color-secondary-foreground: #18181B;
+
+  /* Borders & Dividers */
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-ring: #BAE6FD;
+
+  /* Shadows */
+  --shadow-glass: 0 4px 24px -4px rgba(0, 0, 0, 0.03), 0 0 1px 0 rgba(0, 0, 0, 0.1);
+  --shadow-glass-hover: 0 8px 32px -4px rgba(0, 0, 0, 0.05), 0 0 1px 0 rgba(0, 0, 0, 0.1);
+  
+  /* Anims */
+  --animate-fade-in: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply antialiased min-h-screen selection:bg-primary/20 selection:text-primary;
+    
+    /* Minimalist dot pattern background */
+    background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -12px -12px;
+  }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
-}
-
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out;
+@layer utilities {
+  .glass-panel {
+    background-color: var(--color-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-glass);
+  }
+  
+  .glass-button {
+    background-color: var(--color-secondary);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--color-border);
+    transition: all 0.2s ease;
+  }
+  
+  .glass-button:hover {
+    background-color: var(--color-secondary-hover);
+    box-shadow: var(--shadow-glass-hover);
+  }
 }
