@@ -5,6 +5,7 @@ import {
   Plus,
   ArrowRight,
   MoreHorizontal,
+  Check,
 } from "lucide-react";
 
 import Image from "next/image";
@@ -16,9 +17,15 @@ interface HistoryBarProps {
     style: string;
     prompt: string;
   }>;
+  selectedIds?: string[];
+  onToggleSelect?: (id: string) => void;
 }
 
-export default function HistoryBar({ items }: HistoryBarProps) {
+export default function HistoryBar({
+  items,
+  selectedIds = [],
+  onToggleSelect,
+}: HistoryBarProps) {
   return (
     <div className="relative group">
       {/* Ambient glow behind history */}
@@ -40,6 +47,7 @@ export default function HistoryBar({ items }: HistoryBarProps) {
           <div
             key={item.id}
             className="snap-start shrink-0 w-32 h-32 rounded-4xl glass-panel bg-white border-white/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer relative group/item overflow-hidden"
+            onClick={() => onToggleSelect?.(item.id)}
           >
             {/* Thumbnail placeholder */}
             <div className="absolute inset-0 bg-[#F1F5F9] flex items-center justify-center">
@@ -70,6 +78,15 @@ export default function HistoryBar({ items }: HistoryBarProps) {
             {/* Style Badge */}
             <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md shadow-sm border border-black/5 text-[8px] font-black tracking-tighter uppercase">
               {item.style}
+            </div>
+            <div
+              className={`absolute top-2 left-2 w-5 h-5 rounded-full border transition-all flex items-center justify-center ${
+                selectedIds.includes(item.id)
+                  ? "bg-[#0EA5E9] border-[#0EA5E9] text-white"
+                  : "bg-white/90 border-black/10 text-transparent"
+              }`}
+            >
+              <Check className="w-3 h-3" />
             </div>
           </div>
         ))}
