@@ -5,7 +5,6 @@ import {
   Download,
   Maximize2,
   Share2,
-  Sparkles,
   RotateCw,
   CheckCircle2,
   Image as ImageIcon,
@@ -110,6 +109,25 @@ export default function PreviewCard({
     { scope: container, dependencies: [status] },
   );
 
+  const handleDownload = () => {
+    if (!lastResult?.url) return;
+    const anchor = document.createElement("a");
+    anchor.href = lastResult.url;
+    anchor.download = `gisfy-${Date.now()}.png`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  };
+
+  const handleCopyUrl = async () => {
+    if (!lastResult?.url) return;
+    try {
+      await navigator.clipboard.writeText(lastResult.url);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div
       ref={container}
@@ -168,6 +186,7 @@ export default function PreviewCard({
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 rounded-xl"
+                onClick={handleCopyUrl}
               >
                 <Share2 className="w-4 h-4 text-gray-400" />
               </Button>
@@ -175,6 +194,7 @@ export default function PreviewCard({
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 rounded-xl"
+                onClick={handleDownload}
               >
                 <Download className="w-4 h-4 text-gray-400" />
               </Button>

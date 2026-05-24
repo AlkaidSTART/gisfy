@@ -39,9 +39,13 @@ export default function GeneratePage() {
     transparent: true,
     resolution: 256,
     enhancement: true,
+    seed: "",
+    lockSeed: false,
+    negativePrompt: "",
   });
   const [history, setHistory] = useState<Asset[]>([]);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockedSeedRef = useRef<number | undefined>(undefined);
 
   const loadAssets = useCallback(async () => {
     try {
@@ -128,6 +132,18 @@ export default function GeneratePage() {
     setGenProgress(5);
 
     try {
+      const currentSeed = config.lockSeed
+        ? (lockedSeedRef.current ??
+          (config.seed ? Number(config.seed) : Math.floor(Math.random() * 2_147_483_647)))
+        : config.seed
+          ? Number(config.seed)
+          : undefined;
+      if (config.lockSeed) {
+        lockedSeedRef.current = currentSeed;
+      } else {
+        lockedSeedRef.current = undefined;
+      }
+
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,6 +153,8 @@ export default function GeneratePage() {
           type: "character",
           size: config.resolution,
           count: 1,
+          seed: currentSeed,
+          negativePrompt: config.negativePrompt.trim() || undefined,
         }),
       });
       const json = await res.json();
@@ -149,7 +167,16 @@ export default function GeneratePage() {
       setIsGenerating(false);
       setGenStatus("failed");
     }
-  }, [prompt, isGenerating, activeStyle, config.resolution, pollTask]);
+  }, [
+    prompt,
+    isGenerating,
+    activeStyle,
+    config.resolution,
+    config.seed,
+    config.lockSeed,
+    config.negativePrompt,
+    pollTask,
+  ]);
 
   useEffect(() => {
     return stopPolling;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings2, Layers, Monitor, Info } from "lucide-react";
+import { Settings2, Layers, Monitor, Info, Dices, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -9,15 +9,28 @@ interface ParamControlsProps {
     transparent: boolean;
     resolution: number;
     enhancement: boolean;
+    seed: string;
+    lockSeed: boolean;
+    negativePrompt: string;
   };
   onChange: (val: {
     transparent: boolean;
     resolution: number;
     enhancement: boolean;
+    seed: string;
+    lockSeed: boolean;
+    negativePrompt: string;
   }) => void;
 }
 
 export default function ParamControls({ value, onChange }: ParamControlsProps) {
+  const randomizeSeed = () => {
+    onChange({
+      ...value,
+      seed: String(Math.floor(Math.random() * 2_147_483_647)),
+    });
+  };
+
   return (
     <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border-white bg-white/60">
       <div className="flex items-center justify-between px-1">
@@ -169,6 +182,60 @@ export default function ParamControls({ value, onChange }: ParamControlsProps) {
               )}
             ></div>
           </div>
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-border/40">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-bold text-gray-900 flex items-center gap-1.5">
+              <Lock className="w-3 h-3 text-[#0EA5E9]" />
+              Seed
+            </label>
+            <button
+              type="button"
+              onClick={randomizeSeed}
+              className="h-7 px-2 rounded-lg border border-border/50 bg-white text-[10px] font-bold text-gray-700 flex items-center gap-1 hover:bg-gray-50"
+            >
+              <Dices className="w-3 h-3" />
+              随机
+            </button>
+          </div>
+          <input
+            value={value.seed}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                seed: e.target.value.replace(/[^\d]/g, "").slice(0, 10),
+              })
+            }
+            placeholder="留空=自动"
+            className="w-full h-9 rounded-xl border border-border/50 bg-white px-3 text-xs font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#0EA5E9]/20"
+          />
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, lockSeed: !value.lockSeed })}
+            className={cn(
+              "h-9 w-full rounded-xl text-xs font-bold transition-colors border",
+              value.lockSeed
+                ? "bg-[#0EA5E9] text-white border-[#0EA5E9]"
+                : "bg-white text-gray-600 border-border/50 hover:bg-gray-50",
+            )}
+          >
+            {value.lockSeed ? "已锁定 Seed" : "锁定 Seed"}
+          </button>
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-border/40">
+          <label className="text-[11px] font-bold text-gray-900">
+            负面提示词
+          </label>
+          <textarea
+            value={value.negativePrompt}
+            onChange={(e) =>
+              onChange({ ...value, negativePrompt: e.target.value.slice(0, 300) })
+            }
+            placeholder="例如：模糊, 畸形手指, 多余肢体, 低质量, 水印"
+            className="w-full min-h-16 rounded-xl border border-border/50 bg-white px-3 py-2 text-xs font-medium text-gray-900 outline-none resize-none focus:ring-2 focus:ring-[#0EA5E9]/20"
+          />
         </div>
       </div>
 
