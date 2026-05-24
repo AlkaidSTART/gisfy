@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     });
 
     const { text: analysis } = await generateText({
-      model: aliyun("qwen-vl-max"),
+      model: aliyun(process.env.VISION_MODEL || "qwen-vl-max"),
       system: `你是一个专业的游戏美术分析助手。分析上传的参考图片，用中文简洁描述：
 1. 主体内容（角色/场景/道具等）
 2. 美术风格（像素/扁平/日系等）
