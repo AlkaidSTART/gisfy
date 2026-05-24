@@ -18,7 +18,9 @@ export function listAssets(userId: string) {
 
 export function getAssetsByIds(userId: string, ids: string[]) {
   const store = getUserStore(userId);
-  return ids.map((id) => store.get(id)).filter((asset) => Boolean(asset));
+  return ids
+    .map((id) => store.get(id))
+    .filter((asset): asset is Asset => asset !== undefined);
 }
 
 export function deleteAsset(userId: string, id: string) {

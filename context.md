@@ -1,6 +1,6 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-24 · Day 3（Landing Page 已完成）
+> 最后更新：2026-05-24 · Day 3（开发任务闭环完成，部署留待后续）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
@@ -38,6 +38,7 @@
 - ✅ 素材管理筛选栏（风格 / 类型 / 日期 / 搜索）
 - ✅ 批量操作（删除选中 / 导出选中 ZIP）
 - ✅ 首页 Landing Page（功能导向重构）
+- ✅ 构建链路通过（`npm run build`）
 
 ---
 
@@ -45,6 +46,6 @@
 
 - [ ] Supabase Storage Bucket 手动创建（或通过 Dashboard）
 - [ ] 素材类型选择 UI
-- [ ] Vercel 部署
+- [ ] Vercel 部署（当前按需求不执行，仅保留可选）
 
 ---
