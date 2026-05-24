@@ -44,6 +44,17 @@ export default function GeneratePage() {
     negativePrompt: "",
   });
   const [history, setHistory] = useState<Asset[]>([]);
+  const [sheetAssetIds, setSheetAssetIds] = useState("");
+  const [sheetFormat, setSheetFormat] = useState<
+    "texturepacker-array" | "aseprite" | "phaser" | "strip" | "grid"
+  >("texturepacker-array");
+  const [isBuildingSheet, setIsBuildingSheet] = useState(false);
+  const [sheetResult, setSheetResult] = useState<{
+    pngUrl: string;
+    jsonUrl: string;
+    frameCount: number;
+    sheetSize: { w: number; h: number };
+  } | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockedSeedRef = useRef<number | undefined>(undefined);
 
@@ -177,6 +188,37 @@ export default function GeneratePage() {
     config.negativePrompt,
     pollTask,
   ]);
+
+  const handleBuildSpritesheet = useCallback(async () => {
+    const assetIds = sheetAssetIds
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (assetIds.length === 0 || isBuildingSheet) return;
+    setIsBuildingSheet(true);
+    try {
+      const res = await fetch("/api/spritesheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetIds,
+          format: sheetFormat,
+          name: "spritesheet",
+          padding: 1,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error?.message || "生成 spritesheet 失败");
+      }
+      setSheetResult(json.data);
+    } catch (error) {
+      console.error(error);
+      setSheetResult(null);
+    } finally {
+      setIsBuildingSheet(false);
+    }
+  }, [sheetAssetIds, sheetFormat, isBuildingSheet]);
 
   useEffect(() => {
     return stopPolling;
@@ -358,6 +400,74 @@ export default function GeneratePage() {
               >
                 查看全部记录
               </Link>
+            </div>
+            <div className="px-2 mb-4">
+              <div className="glass-panel rounded-2xl bg-white/60 border border-white p-3 md:p-4 flex flex-col gap-3">
+                <p className="text-[11px] font-bold text-gray-700">
+                  Spritesheet（输入素材ID，逗号分隔）
+                </p>
+                <input
+                  value={sheetAssetIds}
+                  onChange={(e) => setSheetAssetIds(e.target.value)}
+                  placeholder="例如：id_a,id_b,id_c"
+                  className="h-9 rounded-xl border border-border/50 bg-white px-3 text-xs"
+                />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={sheetFormat}
+                    onChange={(e) =>
+                      setSheetFormat(
+                        e.target.value as
+                          | "texturepacker-array"
+                          | "aseprite"
+                          | "phaser"
+                          | "strip"
+                          | "grid",
+                      )
+                    }
+                    className="h-9 rounded-xl border border-border/50 bg-white px-3 text-xs font-medium"
+                  >
+                    <option value="texturepacker-array">
+                      texturepacker-array
+                    </option>
+                    <option value="aseprite">aseprite</option>
+                    <option value="phaser">phaser</option>
+                    <option value="strip">strip</option>
+                    <option value="grid">grid</option>
+                  </select>
+                  <Button
+                    onClick={handleBuildSpritesheet}
+                    disabled={isBuildingSheet}
+                    className="h-9 rounded-xl text-xs font-bold"
+                  >
+                    {isBuildingSheet ? "生成中..." : "生成 Spritesheet"}
+                  </Button>
+                </div>
+                {sheetResult && (
+                  <div className="text-[11px] text-gray-600 flex flex-wrap gap-3">
+                    <span>
+                      帧数: {sheetResult.frameCount} / 尺寸:{" "}
+                      {sheetResult.sheetSize.w}x{sheetResult.sheetSize.h}
+                    </span>
+                    <a
+                      href={sheetResult.pngUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#0EA5E9] font-bold hover:underline"
+                    >
+                      打开 PNG
+                    </a>
+                    <a
+                      href={sheetResult.jsonUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#0EA5E9] font-bold hover:underline"
+                    >
+                      打开 JSON
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
             <HistoryBar items={history} />
           </div>
