@@ -202,15 +202,15 @@ export default function ShowcasePage() {
             <div
               key={asset.id}
               className={cn(
-                "asset-card break-inside-avoid relative flex flex-col glass-panel rounded-[2rem] overflow-hidden group border border-white/60 bg-white/40 shadow-sm hover:shadow-2xl hover:shadow-[#0EA5E9]/10 transition-all duration-700 cursor-pointer",
+                "asset-card break-inside-avoid relative flex flex-col glass-panel rounded-4xl overflow-hidden group border border-white/60 bg-white/40 shadow-sm hover:shadow-2xl hover:shadow-[#0EA5E9]/10 transition-all duration-700 cursor-pointer",
               )}
             >
               {/* Image Box */}
               <div
                 className={cn(
-                  "relative w-full overflow-hidden bg-gradient-to-br",
+                  "relative w-full overflow-hidden bg-linear-to-br",
                   asset.color,
-                  asset.size === "v-large" ? "h-[440px]" : "h-[280px]",
+                  asset.size === "v-large" ? "h-110" : "h-70",
                   "flex items-center justify-center transition-all duration-700",
                 )}
               >

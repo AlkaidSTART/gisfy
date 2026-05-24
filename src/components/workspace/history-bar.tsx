@@ -26,7 +26,7 @@ export default function HistoryBar({ items }: HistoryBarProps) {
 
       <div className="flex items-center gap-5 overflow-x-auto pb-8 pt-2 scrollbar-hide snap-x px-2">
         {/* Slot 0: Empty/CTA */}
-        <div className="snap-start shrink-0 w-32 h-32 rounded-[2rem] glass-panel bg-white/60 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#0EA5E9] hover:bg-white transition-all cursor-pointer group/card">
+        <div className="snap-start shrink-0 w-32 h-32 rounded-4xl glass-panel bg-white/60 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#0EA5E9] hover:bg-white transition-all cursor-pointer group/card">
           <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover/card:scale-110 group-hover/card:bg-blue-50 transition-all">
             <Plus className="w-5 h-5 text-gray-300 group-hover/card:text-[#0EA5E9]" />
           </div>
@@ -39,7 +39,7 @@ export default function HistoryBar({ items }: HistoryBarProps) {
         {items.map((item) => (
           <div
             key={item.id}
-            className="snap-start shrink-0 w-32 h-32 rounded-[2rem] glass-panel bg-white border-white/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer relative group/item overflow-hidden"
+            className="snap-start shrink-0 w-32 h-32 rounded-4xl glass-panel bg-white border-white/80 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 cursor-pointer relative group/item overflow-hidden"
           >
             {/* Thumbnail placeholder */}
             <div className="absolute inset-0 bg-[#F1F5F9] flex items-center justify-center">
@@ -51,7 +51,7 @@ export default function HistoryBar({ items }: HistoryBarProps) {
                   className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                <div className="w-full h-full bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                   <ImageIcon className="w-8 h-8 text-blue-200/60" />
                 </div>
               )}
@@ -59,7 +59,7 @@ export default function HistoryBar({ items }: HistoryBarProps) {
 
             {/* Hover Toolbar */}
             <div className="absolute inset-x-0 bottom-0 p-2 bg-black/80 backdrop-blur-md translate-y-full group-hover/item:translate-y-0 transition-transform duration-300 flex items-center justify-between">
-              <span className="text-[8px] font-bold text-white uppercase ml-1 block max-w-[80px] truncate">
+              <span className="text-[8px] font-bold text-white uppercase ml-1 block max-w-20 truncate">
                 {item.prompt || "无名素材"}
               </span>
               <button className="p-1 rounded-md bg-white/10 text-white hover:bg-white/20">
@@ -79,14 +79,14 @@ export default function HistoryBar({ items }: HistoryBarProps) {
           Array.from({ length: 5 - items.length }).map((_, i) => (
             <div
               key={`placeholder-${i}`}
-              className="snap-start shrink-0 w-32 h-32 rounded-[2rem] border border-dashed border-gray-100/50 bg-gray-50/10 flex items-center justify-center opacity-50"
+              className="snap-start shrink-0 w-32 h-32 rounded-4xl border border-dashed border-gray-100/50 bg-gray-50/10 flex items-center justify-center opacity-50"
             >
               <ImageIcon className="w-6 h-6 text-gray-100" />
             </div>
           ))}
 
         {/* View All Button */}
-        <div className="snap-start shrink-0 h-32 flex flex-col items-center justify-center px-8 border-l border-border/40 ml-4 h-full">
+        <div className="snap-start shrink-0 flex flex-col items-center justify-center px-8 border-l border-border/40 ml-4 h-full">
           <button className="w-12 h-12 rounded-full border border-border/40 flex items-center justify-center hover:bg-black hover:text-white hover:border-black transition-all group/all">
             <ArrowRight className="w-5 h-5 group-hover/all:translate-x-1 transition-transform" />
           </button>

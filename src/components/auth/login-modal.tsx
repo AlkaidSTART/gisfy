@@ -62,7 +62,7 @@ export default function LoginModal({ open, onClose }: Props) {
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
     >
       <div className="glass-panel w-full max-w-md mx-4 rounded-2xl p-8 shadow-xl animate-slide-up relative">
         {/* Close button */}

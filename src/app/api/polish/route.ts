@@ -4,11 +4,10 @@ import { fail, ok } from "@/lib/response";
 
 export async function POST(req: Request) {
   try {
-    const { prompt, style, type, mode } = (await req.json()) as {
+    const { prompt, style, type } = (await req.json()) as {
       prompt: string;
       style?: string;
       type?: string;
-      mode?: string;
     };
 
     if (!prompt?.trim()) {

@@ -113,7 +113,7 @@ export default function PreviewCard({
   return (
     <div
       ref={container}
-      className="w-full h-full glass-panel rounded-[2.5rem] flex flex-col overflow-hidden relative border-white bg-white/40 shadow-2xl shadow-blue-500/5 min-h-[640px]"
+      className="w-full h-full glass-panel rounded-[2.5rem] flex flex-col overflow-hidden relative border-white bg-white/40 shadow-2xl shadow-blue-500/5 min-h-160"
     >
       <div
         ref={particlesContainer}
@@ -188,7 +188,7 @@ export default function PreviewCard({
         <div className="h-1 bg-gray-100/50 z-20">
           <div
             ref={progressBar}
-            className="h-full bg-gradient-to-r from-[#0EA5E9] via-purple-500 to-pink-500 rounded-r-full"
+            className="h-full bg-linear-to-r from-[#0EA5E9] via-purple-500 to-pink-500 rounded-r-full"
             style={{ width: "0%" }}
           />
         </div>
@@ -199,7 +199,7 @@ export default function PreviewCard({
         {/* Idle */}
         {!isGenerating && status === "idle" && !lastResult && (
           <div className="flex flex-col items-center gap-6 text-center">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-3xl bg-linear-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center">
               <ImageIcon className="w-10 h-10 text-gray-300" />
             </div>
             <div>
@@ -219,10 +219,10 @@ export default function PreviewCard({
           >
             <div className="relative w-72 h-72">
               <div
-                className="absolute inset-0 rounded-3xl bg-gradient-to-r from-[#0EA5E9] via-purple-500 to-pink-500 animate-spin opacity-20 blur-xl"
+                className="absolute inset-0 rounded-3xl bg-linear-to-r from-[#0EA5E9] via-purple-500 to-pink-500 animate-spin opacity-20 blur-xl"
                 style={{ animationDuration: "3s" }}
               />
-              <div className="absolute inset-4 rounded-2xl bg-gradient-to-br from-white/80 to-gray-50/50 border border-white/60 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+              <div className="absolute inset-4 rounded-2xl bg-linear-to-br from-white/80 to-gray-50/50 border border-white/60 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
                 <div className="relative">
                   <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
                     <circle
@@ -321,7 +321,7 @@ export default function PreviewCard({
             ref={imageContainer}
             className="relative w-full max-w-md aspect-square"
           >
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#0EA5E9]/10 via-purple-500/10 to-pink-500/10 blur-2xl rounded-3xl" />
+            <div className="absolute -inset-4 bg-linear-to-r from-[#0EA5E9]/10 via-purple-500/10 to-pink-500/10 blur-2xl rounded-3xl" />
             <div className="relative w-full h-full rounded-3xl overflow-hidden border border-white/50 shadow-2xl">
               {lastResult.url ? (
                 <Image

@@ -190,7 +190,7 @@ export default function GeneratePage() {
   return (
     <div
       ref={container}
-      className="w-full flex flex-col gap-8 pb-32 max-w-[1600px] mx-auto min-h-screen px-4 md:px-8"
+      className="w-full flex flex-col gap-8 pb-32 max-w-400 mx-auto min-h-screen px-4 md:px-8"
     >
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-8 pb-2">
         <div className="sidebar-item">
@@ -264,7 +264,7 @@ export default function GeneratePage() {
             />
           </div>
 
-          <div className="main-preview min-h-[640px] flex flex-col group">
+          <div className="main-preview min-h-160 flex flex-col group">
             <div className="flex-1 relative">
               <PreviewCard
                 isGenerating={isGenerating}

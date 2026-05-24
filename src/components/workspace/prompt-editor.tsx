@@ -145,7 +145,7 @@ export default function PromptEditor({
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="relative glass-panel rounded-[2rem] bg-white border-white shadow-xl shadow-blue-500/5 transition-all duration-500 group focus-within:shadow-2xl focus-within:shadow-blue-500/10 focus-within:ring-2 focus-within:ring-[#0EA5E9]/10">
+      <div className="relative glass-panel rounded-4xl bg-white border-white shadow-xl shadow-blue-500/5 transition-all duration-500 group focus-within:shadow-2xl focus-within:shadow-blue-500/10 focus-within:ring-2 focus-within:ring-[#0EA5E9]/10">
         <div className="absolute -top-3 left-8 flex items-center gap-2">
           <div className="px-3 py-1 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border border-white/20">
             <Wand2 className="w-3 h-3 text-[#0EA5E9]" />
@@ -272,7 +272,7 @@ export default function PromptEditor({
       {/* Polish Result Panel */}
       {showDiff && polishedText && (
         <div ref={polishRef} className="overflow-hidden">
-          <div className="glass-panel rounded-2xl bg-gradient-to-r from-[#0EA5E9]/5 to-purple-500/5 border border-[#0EA5E9]/10 p-5">
+          <div className="glass-panel rounded-2xl bg-linear-to-r from-[#0EA5E9]/5 to-purple-500/5 border border-[#0EA5E9]/10 p-5">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center">
                 <RefreshCw className="w-3.5 h-3.5 text-[#0EA5E9]" />
