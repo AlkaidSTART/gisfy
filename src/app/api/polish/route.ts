@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 ${styleHint}${typeHint}`;
 
     const { text } = await generateText({
-      model: aliyun(process.env.ALI_MODEL || "qwen-turbo"),
+      model: aliyun(process.env.POLISH_MODEL || "qwen-turbo"),
       system: systemPrompt,
       prompt: `用户原始描述: ${prompt}\n请输出润色后的中文提示词：`,
       temperature: 0.7,
