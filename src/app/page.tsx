@@ -71,7 +71,7 @@ export default function Home() {
   return (
     <div
       ref={container}
-      className="w-full flex-col flex items-center justify-center min-h-[80vh]"
+      className="w-full flex-col flex items-center justify-center min-h-[80vh] px-4 md:px-8"
     >
       {/* Hero Section */}
       <section className="text-center w-full max-w-4xl mx-auto flex flex-col items-center pt-10 pb-20">

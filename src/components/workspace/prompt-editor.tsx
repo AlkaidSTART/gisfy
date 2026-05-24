@@ -158,8 +158,8 @@ export default function PromptEditor({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="描述您想生成的素材，例如：一个穿着蓝色盔甲的像素风骑士... Enter发送 / Shift+Enter换行"
-            className="w-full h-32 p-7 bg-transparent border-none focus:ring-0 text-gray-800 placeholder:text-gray-300 font-medium leading-relaxed resize-none scrollbar-hide text-md"
+            placeholder="描述想生成的素材：如 穿蓝盔甲的像素骑士"
+            className="w-full h-32 p-7 pt-8 bg-transparent border-none focus:ring-0 text-gray-800 placeholder:text-gray-300 font-medium leading-relaxed resize-none scrollbar-hide text-md"
           />
         </div>
 

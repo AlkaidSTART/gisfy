@@ -190,7 +190,7 @@ export default function GeneratePage() {
   return (
     <div
       ref={container}
-      className="w-full flex flex-col gap-8 pb-32 max-w-[1600px] mx-auto min-h-screen"
+      className="w-full flex flex-col gap-8 pb-32 max-w-[1600px] mx-auto min-h-screen px-4 md:px-8"
     >
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-8 pb-2">
         <div className="sidebar-item">
@@ -228,7 +228,7 @@ export default function GeneratePage() {
       </header>
 
       <section className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-8 items-start">
-        <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6 sticky top-24">
+        <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6 lg:sticky lg:top-24">
           <div className="sidebar-item">
             <StyleSelector value={activeStyle} onChange={setActiveStyle} />
           </div>

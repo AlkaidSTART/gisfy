@@ -150,7 +150,7 @@ export default function PreviewCard({
               FORMAT
             </span>
             <span className="text-[11px] font-black text-gray-900 uppercase">
-              PNG-32 (Alpha)
+              PNG(A)
             </span>
           </div>
         </div>

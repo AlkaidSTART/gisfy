@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     await setSessionCookie(token);
 
     return ok({ id: user.id, email: user.email, name: user.name });
-  } catch {
-    return fail("INTERNAL", "服务器错误", 500);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[login] error:", msg, e instanceof Error ? e.stack : "");
+    return fail("INTERNAL", `服务器错误: ${msg}`, 500);
   }
 }
