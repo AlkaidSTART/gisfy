@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import supabaseDb from "@/lib/supabase-db";
 import { createSession, setSessionCookie } from "@/lib/auth";
 import { ok, fail } from "@/lib/response";
 
@@ -19,13 +19,27 @@ export async function POST(req: Request) {
 
     const { email, name, password } = parsed.data;
 
-    const exists = await prisma.user.findUnique({ where: { email } });
+    const { data: exists } = await supabaseDb
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
     if (exists) return fail("CONFLICT", "该邮箱已注册", 409);
 
     const hashed = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: { email, name, password: hashed },
-    });
+    const { data: user, error } = await supabaseDb
+      .from("users")
+      .insert({ email, name, password: hashed })
+      .select("id, email, name")
+      .single();
+    if (error) {
+      console.error("[register] supabase insert error:", error);
+      return fail("INTERNAL", `注册失败: ${error.message}`, 500);
+    }
+    if (!user) {
+      console.error("[register] insert returned no user");
+      return fail("INTERNAL", "注册失败", 500);
+    }
 
     const token = await createSession({
       userId: user.id,

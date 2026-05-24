@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import supabaseDb from "@/lib/supabase-db";
 import { createSession, setSessionCookie } from "@/lib/auth";
 import { ok, fail } from "@/lib/response";
 
@@ -13,15 +13,34 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const parsed = bodySchema.safeParse(body);
-    if (!parsed.success) return fail("VALIDATION", "邮箱/密码格式不正确");
+    if (!parsed.success) {
+      console.error("[login] validation failed:", parsed.error.issues);
+      return fail("VALIDATION", "邮箱/密码格式不正确");
+    }
 
     const { email, password } = parsed.data;
+    console.log("[login] attempt:", email);
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return fail("NOT_FOUND", "邮箱或密码错误", 401);
+    const { data: user, error: dbError } = await supabaseDb
+      .from("users")
+      .select("id, email, name, password")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (dbError) {
+      console.error("[login] supabase error:", dbError);
+      return fail("INTERNAL", `数据库错误: ${dbError.message}`, 500);
+    }
+    if (!user) {
+      console.log("[login] user not found:", email);
+      return fail("NOT_FOUND", "邮箱或密码错误", 401);
+    }
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return fail("NOT_FOUND", "邮箱或密码错误", 401);
+    if (!valid) {
+      console.log("[login] invalid password for:", email);
+      return fail("NOT_FOUND", "邮箱或密码错误", 401);
+    }
 
     const token = await createSession({
       userId: user.id,
