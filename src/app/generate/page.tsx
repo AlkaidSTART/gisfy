@@ -5,7 +5,7 @@ import StyleSelector from "@/components/workspace/style-selector";
 import PromptEditor from "@/components/workspace/prompt-editor";
 import ParamControls from "@/components/workspace/param-controls";
 import PreviewCard from "@/components/workspace/preview-card";
-import HistoryBar from "@/components/workspace/history-bar";
+import SpritesheetBuilder from "@/components/workspace/spritesheet-builder";
 import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -445,81 +445,16 @@ export default function GeneratePage() {
                 查看全部记录
               </Link>
             </div>
-            <div className="px-2 mb-4">
-              <div className="glass-panel rounded-2xl bg-white/60 border border-white p-3 md:p-4 flex flex-col gap-3">
-                <p className="text-[11px] font-bold text-gray-700">
-                  Spritesheet（从下方历史素材多选）
-                </p>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={sheetFormat}
-                    onChange={(e) =>
-                      setSheetFormat(
-                        e.target.value as
-                          | "texturepacker-array"
-                          | "aseprite"
-                          | "phaser"
-                          | "strip"
-                          | "grid",
-                      )
-                    }
-                    className="h-9 rounded-xl border border-border/50 bg-white px-3 text-xs font-medium"
-                  >
-                    <option value="texturepacker-array">
-                      texturepacker-array
-                    </option>
-                    <option value="aseprite">aseprite</option>
-                    <option value="phaser">phaser</option>
-                    <option value="strip">strip</option>
-                    <option value="grid">grid</option>
-                  </select>
-                  <Button
-                    onClick={handleBuildSpritesheet}
-                    disabled={isBuildingSheet || selectedAssetIds.length === 0}
-                    className="h-9 rounded-xl text-xs font-bold"
-                  >
-                    {isBuildingSheet ? "生成中..." : "生成 Spritesheet"}
-                  </Button>
-                  <span className="text-[11px] text-gray-500 font-medium">
-                    已选 {selectedAssetIds.length} 项
-                  </span>
-                </div>
-                {sheetResult && (
-                  <div className="text-[11px] text-gray-600 flex flex-wrap gap-3">
-                    <span>
-                      帧数: {sheetResult.frameCount} / 尺寸:{" "}
-                      {sheetResult.sheetSize.w}x{sheetResult.sheetSize.h}
-                    </span>
-                    <a
-                      href={sheetResult.pngUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[#0EA5E9] font-bold hover:underline"
-                    >
-                      打开 PNG
-                    </a>
-                    <a
-                      href={sheetResult.jsonUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[#0EA5E9] font-bold hover:underline"
-                    >
-                      打开 JSON
-                    </a>
-                    <button
-                      onClick={handleExportPackage}
-                      className="text-[#0EA5E9] font-bold hover:underline"
-                    >
-                      导出 ZIP
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <HistoryBar
+            <SpritesheetBuilder
               items={history}
               selectedIds={selectedAssetIds}
               onToggleSelect={toggleSelectAsset}
+              format={sheetFormat}
+              onFormatChange={setSheetFormat}
+              isBuilding={isBuildingSheet}
+              onBuild={handleBuildSpritesheet}
+              result={sheetResult}
+              onExportZip={handleExportPackage}
             />
           </div>
         </div>
