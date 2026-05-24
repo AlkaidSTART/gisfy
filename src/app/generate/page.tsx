@@ -6,6 +6,7 @@ import PromptEditor from "@/components/workspace/prompt-editor";
 import ParamControls from "@/components/workspace/param-controls";
 import PreviewCard from "@/components/workspace/preview-card";
 import SpritesheetBuilder from "@/components/workspace/spritesheet-builder";
+import AnimationBuilder from "@/components/workspace/animation-builder";
 import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -444,6 +445,14 @@ export default function GeneratePage() {
               >
                 查看全部记录
               </Link>
+            </div>
+            <div className="px-2 mb-4">
+              <AnimationBuilder
+                prompt={prompt}
+                style={activeStyle}
+                seed={config.seed ? Number(config.seed) : undefined}
+                negativePrompt={config.negativePrompt}
+              />
             </div>
             <SpritesheetBuilder
               items={history}

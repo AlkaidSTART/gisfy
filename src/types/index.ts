@@ -86,6 +86,27 @@ export const assetsQuerySchema = z.object({
 
 export const deleteAssetSchema = z.object({ id: z.string().min(1) });
 
+export const animationTemplateSchema = z.enum([
+  "idle",
+  "walk",
+  "attack",
+  "jump",
+  "hurt",
+  "death",
+]);
+
+export const animationDirectionSchema = z.union([z.literal(2), z.literal(4)]);
+
+export const generateSequenceRequestSchema = z.object({
+  prompt: z.string().min(1).max(300),
+  style: styleSchema,
+  size: assetSizeSchema.default(256),
+  template: animationTemplateSchema,
+  direction: animationDirectionSchema.default(2),
+  seed: z.number().int().optional(),
+  negativePrompt: z.string().max(300).optional().default(""),
+});
+
 export const spritesheetFormatSchema = z.enum([
   "texturepacker-array",
   "aseprite",
@@ -109,6 +130,10 @@ export type GenerateRequest = z.infer<typeof generateRequestSchema>;
 export type GeneratedImage = z.infer<typeof generatedImageSchema>;
 export type UploadRequest = z.infer<typeof uploadRequestSchema>;
 export type SpritesheetConfig = z.infer<typeof spritesheetConfigSchema>;
+export type AnimationTemplate = z.infer<typeof animationTemplateSchema>;
+export type GenerateSequenceRequest = z.infer<
+  typeof generateSequenceRequestSchema
+>;
 
 export type ApiSuccess<T> = { success: true; data: T };
 export type ApiError = {
@@ -142,6 +167,14 @@ export interface GenerateTask {
     size: number;
   }>;
   error?: string;
+}
+
+export interface SequenceTaskInfo {
+  taskId: string;
+  frame: number;
+  direction: number;
+  directionLabel: string;
+  prompt: string;
 }
 
 // ─── Auth ────────────────────────────────────────────

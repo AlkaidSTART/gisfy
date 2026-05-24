@@ -1,6 +1,6 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-24 · Day 3（Spritesheet 前端预览网格已接入）
+> 最后更新：2026-05-24 · Day 3（动画序列生成首版已接入）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
@@ -33,6 +33,8 @@
 - ✅ 历史素材多选 + 一键生成 spritesheet
 - ✅ ZIP 导出工程包（PNG + JSON + manifest）
 - ✅ Spritesheet 前端预览网格（Canvas）
+- ✅ 动画序列生成 API（`POST /api/generate/sequence`）
+- ✅ 动画序列生成 UI（模板选择 / 方向切换 / 帧网格预览）
 
 ---
 
@@ -42,7 +44,6 @@
 - [ ] 素材类型选择 UI
 - [ ] 首页 Landing Page
 - [ ] Vercel 部署
-- [ ] 动画序列生成 API + UI
 - [ ] 素材管理筛选/批量操作
 
 ---
