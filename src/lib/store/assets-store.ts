@@ -16,6 +16,11 @@ export function listAssets(userId: string) {
   return Array.from(getUserStore(userId).values());
 }
 
+export function getAssetsByIds(userId: string, ids: string[]) {
+  const store = getUserStore(userId);
+  return ids.map((id) => store.get(id)).filter((asset) => Boolean(asset));
+}
+
 export function deleteAsset(userId: string, id: string) {
   return getUserStore(userId).delete(id);
 }

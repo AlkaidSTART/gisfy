@@ -86,12 +86,29 @@ export const assetsQuerySchema = z.object({
 
 export const deleteAssetSchema = z.object({ id: z.string().min(1) });
 
+export const spritesheetFormatSchema = z.enum([
+  "texturepacker-array",
+  "aseprite",
+  "phaser",
+  "strip",
+  "grid",
+]);
+
+export const spritesheetConfigSchema = z.object({
+  assetIds: z.array(z.string()).min(1).max(64),
+  format: spritesheetFormatSchema.default("texturepacker-array"),
+  columns: z.number().int().min(1).max(16).optional(),
+  padding: z.number().int().min(0).max(8).default(1),
+  name: z.string().min(1).max(64).default("spritesheet"),
+});
+
 export type Style = z.infer<typeof styleSchema>;
 export type AssetType = z.infer<typeof assetTypeSchema>;
 export type Asset = z.infer<typeof assetSchema>;
 export type GenerateRequest = z.infer<typeof generateRequestSchema>;
 export type GeneratedImage = z.infer<typeof generatedImageSchema>;
 export type UploadRequest = z.infer<typeof uploadRequestSchema>;
+export type SpritesheetConfig = z.infer<typeof spritesheetConfigSchema>;
 
 export type ApiSuccess<T> = { success: true; data: T };
 export type ApiError = {
