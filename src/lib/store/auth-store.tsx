@@ -26,6 +26,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const AUTH_USER_ID_KEY = "gisfy_userid";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -33,11 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 启动时检查登录状态
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (json?.success) setUser(json.data);
-      })
+    const initAuth = async () => {
+      const userId = window.localStorage.getItem(AUTH_USER_ID_KEY);
+      if (!userId) return;
+
+      const json = await fetch(`/api/auth/${encodeURIComponent(userId)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+
+      if (json?.success) setUser(json.data);
+      else window.localStorage.removeItem(AUTH_USER_ID_KEY);
+    };
+
+    void initAuth()
       .finally(() => setLoading(false));
   }, []);
 
@@ -50,6 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const json = await res.json();
     if (json.success) {
       setUser(json.data);
+      if (json.data?.id) {
+        window.localStorage.setItem(AUTH_USER_ID_KEY, json.data.id);
+      }
       return { ok: true };
     }
     return { ok: false, error: json.error?.message ?? "登录失败" };
@@ -65,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const json = await res.json();
       if (json.success) {
         setUser(json.data);
+        if (json.data?.id) {
+          window.localStorage.setItem(AUTH_USER_ID_KEY, json.data.id);
+        }
         return { ok: true };
       }
       return { ok: false, error: json.error?.message ?? "注册失败" };
@@ -74,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    window.localStorage.removeItem(AUTH_USER_ID_KEY);
     setUser(null);
   }, []);
 

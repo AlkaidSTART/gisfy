@@ -6,6 +6,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrisma() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is missing");
+  }
   return new PrismaClient({
     adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
   });
@@ -13,7 +16,7 @@ function createPrisma() {
 
 export const prisma =
   globalForPrisma.prisma ??
-  (process.env.DATABASE_URL ? createPrisma() : new PrismaClient());
+  createPrisma();
 
 if (process.env.NODE_ENV !== "production" && !globalForPrisma.prisma) {
   globalForPrisma.prisma = prisma;
