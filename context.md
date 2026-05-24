@@ -1,6 +1,6 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-23 · Day 2 后期（后端接口测试与修复完成）
+> 最后更新：2026-05-24 · Day 2/3 交界（Spritesheet 与导出工程化推进中）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
@@ -28,16 +28,21 @@
 - ✅ **模块惰性加载修复**（supabase/prisma/redis 不再在 import 时崩溃）
 - ✅ **DashScope API 修复**（异步模式 + 正确模型名 + URL转base64）
 - ✅ **尺寸自动提升**（<512 自动升至 512，满足 wanx2.1-t2i-turbo 最低要求）
+- ✅ Seed / 负面提示词 UI 已接入生成页
+- ✅ Spritesheet 核心库与 `/api/spritesheet`
+- ✅ 历史素材多选 + 一键生成 spritesheet
+- ✅ ZIP 导出工程包（PNG + JSON + manifest）
 
 ---
 
 ## 3. 待办 📋
 
 - [ ] Supabase Storage Bucket 手动创建（或通过 Dashboard）
-- [ ] Spritesheet 合成（P1）
 - [ ] 素材类型选择 UI
-- [ ] Seed 控制 + 负面提示词
 - [ ] 首页 Landing Page
 - [ ] Vercel 部署
+- [ ] Spritesheet 前端预览网格
+- [ ] 动画序列生成 API + UI
+- [ ] 素材管理筛选/批量操作
 
 ---

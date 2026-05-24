@@ -9,9 +9,11 @@ import HistoryBar from "@/components/workspace/history-bar";
 import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { saveAs } from "file-saver";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { TaskStatus } from "@/types";
+import { createExportPackage } from "@/lib/export";
 
 gsap.registerPlugin(useGSAP);
 
@@ -223,30 +225,44 @@ export default function GeneratePage() {
     );
   }, []);
 
-  const handleExportPackage = useCallback(() => {
-    if (!sheetResult) return;
+  const handleExportPackage = useCallback(async () => {
+    if (!sheetResult || selectedAssetIds.length === 0) return;
     const manifest = {
       name: "spritesheet",
       style: activeStyle,
       size: config.resolution,
       frameCount: sheetResult.frameCount,
+      selectedAssetIds,
       generatedAt: new Date().toISOString(),
     };
+    const spriteItems = history
+      .filter((item) => selectedAssetIds.includes(item.id))
+      .map((item, index) => ({
+        filename: `sprite_${String(index + 1).padStart(2, "0")}_${item.id}.png`,
+        url: item.url,
+      }));
 
-    const download = (href: string, filename: string) => {
-      const a = document.createElement("a");
-      a.href = href;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    };
-
-    download(sheetResult.pngUrl, "spritesheet.png");
-    download(sheetResult.jsonUrl, "spritesheet.json");
-    const manifestUrl = `data:application/json;base64,${btoa(JSON.stringify(manifest))}`;
-    download(manifestUrl, "manifest.json");
-  }, [sheetResult, activeStyle, config.resolution]);
+    try {
+      const zipBlob = await createExportPackage({
+        name: "spritesheet",
+        spriteItems,
+        spritesheet: {
+          pngUrl: sheetResult.pngUrl,
+          jsonUrl: sheetResult.jsonUrl,
+        },
+        manifest,
+      });
+      saveAs(zipBlob, "spritesheet.zip");
+    } catch (error) {
+      console.error(error);
+    }
+  }, [
+    sheetResult,
+    selectedAssetIds,
+    activeStyle,
+    config.resolution,
+    history,
+  ]);
 
   useEffect(() => {
     return stopPolling;
@@ -494,7 +510,7 @@ export default function GeneratePage() {
                       onClick={handleExportPackage}
                       className="text-[#0EA5E9] font-bold hover:underline"
                     >
-                      导出工程包
+                      导出 ZIP
                     </button>
                   </div>
                 )}
