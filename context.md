@@ -1,6 +1,6 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-24 · Day 3（动画序列生成首版已接入）
+> 最后更新：2026-05-24 · Day 3（Landing Page 已完成）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
@@ -35,6 +35,9 @@
 - ✅ Spritesheet 前端预览网格（Canvas）
 - ✅ 动画序列生成 API（`POST /api/generate/sequence`）
 - ✅ 动画序列生成 UI（模板选择 / 方向切换 / 帧网格预览）
+- ✅ 素材管理筛选栏（风格 / 类型 / 日期 / 搜索）
+- ✅ 批量操作（删除选中 / 导出选中 ZIP）
+- ✅ 首页 Landing Page（功能导向重构）
 
 ---
 
@@ -42,8 +45,6 @@
 
 - [ ] Supabase Storage Bucket 手动创建（或通过 Dashboard）
 - [ ] 素材类型选择 UI
-- [ ] 首页 Landing Page
 - [ ] Vercel 部署
-- [ ] 素材管理筛选/批量操作
 
 ---

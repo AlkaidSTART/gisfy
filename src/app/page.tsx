@@ -2,7 +2,14 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Layers, LayoutTemplate, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  Layers,
+  LayoutTemplate,
+  Zap,
+  Sparkles,
+  Package,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/store/auth-store";
 import LoginModal from "@/components/auth/login-modal";
@@ -100,6 +107,15 @@ export default function Home() {
               进入工作台 <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
+          <Link href="/showcase">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 px-8 text-base gap-2 rounded-xl"
+            >
+              浏览素材库
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -122,10 +138,10 @@ export default function Home() {
             <Layers className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            即插即用格式
+            动画序列生成
           </h3>
           <p className="text-sm text-gray-500">
-            自动处理深度并滤除背景，提供多分辨率缩放，为您的引擎铺好每一片图层。
+            支持 idle / walk / attack 等模板，2/4 方向展开，保持角色外观一致。
           </p>
         </div>
 
@@ -139,6 +155,32 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             提供详细的接入文档，生成的资源严格符合 Unity、Godot
             等现代底层渲染管线规范。
+          </p>
+        </div>
+      </section>
+
+      <section className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div className="visual-card glass-panel p-8 rounded-3xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-[#0EA5E9]" />
+            <h3 className="text-lg font-semibold text-gray-900">当前可用能力</h3>
+          </div>
+          <div className="text-sm text-gray-600 space-y-2">
+            <p>1. 文生图（pixel / flat / anime）</p>
+            <p>2. Seed 锁定与负面提示词</p>
+            <p>3. Spritesheet 拼图与多格式 JSON</p>
+            <p>4. 批量筛选、批量删除、批量导出</p>
+          </div>
+        </div>
+        <div className="visual-card glass-panel p-8 rounded-3xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-[#0EA5E9]" />
+            <h3 className="text-lg font-semibold text-gray-900">导出工程化</h3>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            一键导出 ZIP，包含 `sprites/`、`spritesheet.png`、
+            `spritesheet.json` 与 `manifest.json`，可直接进入 Unity /
+            Godot 工作流。
           </p>
         </div>
       </section>

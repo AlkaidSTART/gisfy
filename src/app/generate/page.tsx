@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import StyleSelector from "@/components/workspace/style-selector";
 import PromptEditor from "@/components/workspace/prompt-editor";
 import ParamControls from "@/components/workspace/param-controls";
 import PreviewCard from "@/components/workspace/preview-card";
 import SpritesheetBuilder from "@/components/workspace/spritesheet-builder";
 import AnimationBuilder from "@/components/workspace/animation-builder";
+import AssetsToolbar from "@/components/workspace/assets-toolbar";
 import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import type { TaskStatus } from "@/types";
 import { createExportPackage } from "@/lib/export";
 
 gsap.registerPlugin(useGSAP);
+const FILTER_NOW_TS = Date.now();
 
 interface Asset {
   id: string;
@@ -27,6 +29,18 @@ interface Asset {
   size: number;
   timestamp: string;
 }
+
+type FilterStyle = "all" | "pixel" | "flat" | "anime";
+type FilterType =
+  | "all"
+  | "character"
+  | "monster"
+  | "scene"
+  | "tile"
+  | "item"
+  | "ui"
+  | "effect";
+type FilterDate = "today" | "week" | "all";
 
 export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
@@ -47,6 +61,10 @@ export default function GeneratePage() {
     negativePrompt: "",
   });
   const [history, setHistory] = useState<Asset[]>([]);
+  const [filterStyle, setFilterStyle] = useState<FilterStyle>("all");
+  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterDate, setFilterDate] = useState<FilterDate>("all");
+  const [filterSearch, setFilterSearch] = useState("");
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [sheetFormat, setSheetFormat] = useState<
     "texturepacker-array" | "aseprite" | "phaser" | "strip" | "grid"
@@ -265,6 +283,73 @@ export default function GeneratePage() {
     history,
   ]);
 
+  const filteredHistory = useMemo(() => {
+    return history.filter((item) => {
+      if (filterStyle !== "all" && item.style !== filterStyle) return false;
+      if (filterType !== "all" && item.type !== filterType) return false;
+      if (
+        filterSearch.trim() &&
+        !item.prompt.toLowerCase().includes(filterSearch.trim().toLowerCase())
+      ) {
+        return false;
+      }
+      if (filterDate === "today") {
+        return (
+          FILTER_NOW_TS - new Date(item.timestamp).getTime() <=
+          24 * 60 * 60 * 1000
+        );
+      }
+      if (filterDate === "week") {
+        return (
+          FILTER_NOW_TS - new Date(item.timestamp).getTime() <=
+          7 * 24 * 60 * 60 * 1000
+        );
+      }
+      return true;
+    });
+  }, [history, filterStyle, filterType, filterSearch, filterDate]);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedAssetIds.length === 0) return;
+    await Promise.all(
+      selectedAssetIds.map((id) =>
+        fetch("/api/assets", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, userId: "default" }),
+        }),
+      ),
+    );
+    setSelectedAssetIds([]);
+    await loadAssets();
+  }, [selectedAssetIds, loadAssets]);
+
+  const handleExportSelected = useCallback(async () => {
+    if (selectedAssetIds.length === 0) return;
+    const selected = history.filter((item) => selectedAssetIds.includes(item.id));
+    const zipBlob = await createExportPackage({
+      name: "selected-assets",
+      spriteItems: selected.map((item, index) => ({
+        filename: `sprite_${String(index + 1).padStart(2, "0")}_${item.id}.png`,
+        url: item.url,
+      })),
+      spritesheet: {
+        pngUrl:
+          sheetResult?.pngUrl ??
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=",
+        jsonUrl:
+          sheetResult?.jsonUrl ??
+          "data:application/json;base64,eyJmcmFtZXMiOltdLCJtZXRhIjp7fX0=",
+      },
+      manifest: {
+        name: "selected-assets",
+        count: selected.length,
+        generatedAt: new Date().toISOString(),
+      },
+    });
+    saveAs(zipBlob, "selected-assets.zip");
+  }, [selectedAssetIds, history, sheetResult]);
+
   useEffect(() => {
     return stopPolling;
   }, [stopPolling]);
@@ -454,8 +539,23 @@ export default function GeneratePage() {
                 negativePrompt={config.negativePrompt}
               />
             </div>
+            <div className="px-2 mb-4">
+              <AssetsToolbar
+                style={filterStyle}
+                type={filterType}
+                dateRange={filterDate}
+                search={filterSearch}
+                selectedCount={selectedAssetIds.length}
+                onStyleChange={setFilterStyle}
+                onTypeChange={setFilterType}
+                onDateRangeChange={setFilterDate}
+                onSearchChange={setFilterSearch}
+                onDeleteSelected={handleDeleteSelected}
+                onExportSelected={handleExportSelected}
+              />
+            </div>
             <SpritesheetBuilder
-              items={history}
+              items={filteredHistory}
               selectedIds={selectedAssetIds}
               onToggleSelect={toggleSelectAsset}
               format={sheetFormat}
