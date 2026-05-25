@@ -5,17 +5,17 @@ export const ANIMATION_TEMPLATES: Record<
   { frames: number; direction: 2 | 4; prompt: string }
 > = {
   idle: {
-    frames: 4,
+    frames: 3,
     direction: 2,
     prompt: "{角色描述}，待机呼吸动画，轻微上下浮动",
   },
   walk: {
-    frames: 6,
+    frames: 4,
     direction: 4,
     prompt: "{角色描述}，行走循环动画，第{frame}帧",
   },
   attack: {
-    frames: 5,
+    frames: 4,
     direction: 2,
     prompt: "{角色描述}，攻击动作动画，第{frame}帧",
   },
@@ -25,12 +25,12 @@ export const ANIMATION_TEMPLATES: Record<
     prompt: "{角色描述}，跳跃动作动画，第{frame}帧",
   },
   hurt: {
-    frames: 2,
+    frames: 1,
     direction: 2,
     prompt: "{角色描述}，受击反馈动画",
   },
   death: {
-    frames: 4,
+    frames: 3,
     direction: 2,
     prompt: "{角色描述}，死亡消散动画",
   },
