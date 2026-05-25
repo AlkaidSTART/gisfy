@@ -60,23 +60,23 @@ async function pullOneTask(): Promise<QueueTaskPayload | null> {
 }
 
 async function loopOnce() {
-  if (activeWorkers >= WORKER_CONCURRENCY) return;
+  while (activeWorkers < WORKER_CONCURRENCY) {
+    const task = await pullOneTask();
+    if (!task) return;
 
-  const task = await pullOneTask();
-  if (!task) return;
-
-  activeWorkers += 1;
-  queueMicrotask(async () => {
-    try {
-      const mod = await import("@/lib/generation");
-      await withTaskLock(task.taskId, async () => {
-        await mod.runGenerationTask(task.taskId, task.body, task.userId);
-      });
-    } finally {
-      activeWorkers = Math.max(0, activeWorkers - 1);
-      void loopOnce();
-    }
-  });
+    activeWorkers += 1;
+    queueMicrotask(async () => {
+      try {
+        const mod = await import("@/lib/generation");
+        await withTaskLock(task.taskId, async () => {
+          await mod.runGenerationTask(task.taskId, task.body, task.userId);
+        });
+      } finally {
+        activeWorkers = Math.max(0, activeWorkers - 1);
+        void loopOnce();
+      }
+    });
+  }
 }
 
 export function ensureGenerationWorker() {
