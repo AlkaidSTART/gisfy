@@ -281,28 +281,6 @@ export default function GeneratePage() {
     );
   }, []);
 
-  const handleSelectAllFiltered = useCallback(() => {
-    setSelectedAssetIds(filteredHistory.map((item) => item.id));
-  }, [filteredHistory]);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedAssetIds([]);
-  }, []);
-
-  const handleMoveSelectedAsset = useCallback(
-    (id: string, direction: -1 | 1) => {
-      setSelectedAssetIds((prev) => {
-        const index = prev.indexOf(id);
-        const nextIndex = index + direction;
-        if (index < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev;
-        const next = [...prev];
-        [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-        return next;
-      });
-    },
-    [],
-  );
-
   const handleExportPackage = useCallback(async () => {
     if (!sheetResult || selectedAssetIds.length === 0) return;
     const manifest = {
@@ -361,6 +339,28 @@ export default function GeneratePage() {
       return true;
     });
   }, [history, filterStyle, filterType, filterSearch, filterDate]);
+
+  const handleSelectAllFiltered = useCallback(() => {
+    setSelectedAssetIds(filteredHistory.map((item) => item.id));
+  }, [filteredHistory]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedAssetIds([]);
+  }, []);
+
+  const handleMoveSelectedAsset = useCallback(
+    (id: string, direction: -1 | 1) => {
+      setSelectedAssetIds((prev) => {
+        const index = prev.indexOf(id);
+        const nextIndex = index + direction;
+        if (index < 0 || nextIndex < 0 || nextIndex >= prev.length) return prev;
+        const next = [...prev];
+        [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+        return next;
+      });
+    },
+    [],
+  );
 
   const handleDeleteSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
