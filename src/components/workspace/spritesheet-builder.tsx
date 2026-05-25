@@ -72,7 +72,6 @@ export default function SpritesheetBuilder({
         .filter((item): item is AssetItem => Boolean(item)),
     [items, selectedIds],
   );
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const resultJson = useMemo(
     () => (result?.json ? JSON.stringify(result.json, null, 2) : ""),
     [result],
@@ -171,7 +170,7 @@ export default function SpritesheetBuilder({
     };
 
     void draw();
-  }, [selectedItems]);
+  }, [columns, selectedItems]);
 
   return (
     <div className="px-2 mb-4">

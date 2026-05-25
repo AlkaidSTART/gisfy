@@ -291,8 +291,9 @@ export default function GeneratePage() {
       selectedAssetIds,
       generatedAt: new Date().toISOString(),
     };
-    const spriteItems = history
-      .filter((item) => selectedAssetIds.includes(item.id))
+    const spriteItems = selectedAssetIds
+      .map((id) => history.find((item) => item.id === id))
+      .filter((item): item is Asset => Boolean(item))
       .map((item, index) => ({
         filename: `sprite_${String(index + 1).padStart(2, "0")}_${item.id}.png`,
         url: item.url,
@@ -379,9 +380,9 @@ export default function GeneratePage() {
 
   const handleExportSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
-    const selected = history.filter((item) =>
-      selectedAssetIds.includes(item.id),
-    );
+    const selected = selectedAssetIds
+      .map((id) => history.find((item) => item.id === id))
+      .filter((item): item is Asset => Boolean(item));
     const zipBlob = await createExportPackage({
       name: "selected-assets",
       spriteItems: selected.map((item, index) => ({
@@ -683,8 +684,15 @@ export default function GeneratePage() {
                     items={filteredHistory}
                     selectedIds={selectedAssetIds}
                     onToggleSelect={toggleSelectAsset}
+                    onSelectAll={handleSelectAllFiltered}
+                    onClearSelection={handleClearSelection}
+                    onMoveSelected={handleMoveSelectedAsset}
                     format={sheetFormat}
                     onFormatChange={setSheetFormat}
+                    columns={sheetColumns}
+                    onColumnsChange={setSheetColumns}
+                    padding={sheetPadding}
+                    onPaddingChange={setSheetPadding}
                     isBuilding={isBuildingSheet}
                     onBuild={handleBuildSpritesheet}
                     result={sheetResult}
