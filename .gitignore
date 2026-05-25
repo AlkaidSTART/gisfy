@@ -47,3 +47,6 @@ next-env.d.ts
 *.agent.local.md
 .claude/settings.local.json
 CLAUDE.md
+docs/*
+context.md
+context-pack.md
