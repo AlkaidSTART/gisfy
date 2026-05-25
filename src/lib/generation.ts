@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 import { buildPrompt } from "@/lib/prompt-templates";
 import { generateWithAli } from "@/lib/ali";
 import { uploadToSupabase } from "@/lib/supabase-storage";
@@ -12,6 +13,35 @@ import type { Asset, AssetType, GenerateTask, Style } from "@/types";
 
 function mockBase64Png() {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=";
+}
+
+function stripDataUrlPrefix(input: string) {
+  return input.replace(/^data:image\/\w+;base64,/, "");
+}
+
+function toPngDataUrl(buffer: Buffer) {
+  return `data:image/png;base64,${buffer.toString("base64")}`;
+}
+
+async function normalizeBackground(
+  base64Url: string,
+  transparent: boolean,
+): Promise<string> {
+  const src = Buffer.from(stripDataUrlPrefix(base64Url), "base64");
+  if (transparent) {
+    const normalized = await sharp(src)
+      .ensureAlpha()
+      .png()
+      .toBuffer();
+    return toPngDataUrl(normalized);
+  }
+
+  const normalized = await sharp(src)
+    .removeAlpha()
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .png()
+    .toBuffer();
+  return toPngDataUrl(normalized);
 }
 
 async function retry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
@@ -148,6 +178,13 @@ async function runGeneration(
             size: body.size,
           }));
         }
+
+        images = await Promise.all(
+          images.map(async (img) => ({
+            ...img,
+            url: await normalizeBackground(img.url, body.transparent !== false),
+          })),
+        );
 
         await updateTask(task.taskId, { status: "uploading", progress: 70 });
 
