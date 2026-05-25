@@ -8,7 +8,15 @@ import PreviewCard from "@/components/workspace/preview-card";
 import SpritesheetBuilder from "@/components/workspace/spritesheet-builder";
 import AnimationBuilder from "@/components/workspace/animation-builder";
 import AssetsToolbar from "@/components/workspace/assets-toolbar";
-import { LayoutGrid, Zap, Sparkles, Box, Info, RotateCw } from "lucide-react";
+import {
+  LayoutGrid,
+  Zap,
+  Sparkles,
+  Box,
+  Info,
+  RotateCw,
+  Layers,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { saveAs } from "file-saver";
@@ -48,6 +56,7 @@ export default function GeneratePage() {
   const { user } = useAuth();
   const userId = user?.id ?? "default";
 
+  const [activeTab, setActiveTab] = useState<"assets" | "animation">("assets");
   const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">(
     "pixel",
   );
@@ -180,7 +189,9 @@ export default function GeneratePage() {
     try {
       const currentSeed = config.lockSeed
         ? (lockedSeedRef.current ??
-          (config.seed ? Number(config.seed) : Math.floor(Math.random() * 2_147_483_647)))
+          (config.seed
+            ? Number(config.seed)
+            : Math.floor(Math.random() * 2_147_483_647)))
         : config.seed
           ? Number(config.seed)
           : undefined;
@@ -292,13 +303,7 @@ export default function GeneratePage() {
     } catch (error) {
       console.error(error);
     }
-  }, [
-    sheetResult,
-    selectedAssetIds,
-    activeStyle,
-    config.resolution,
-    history,
-  ]);
+  }, [sheetResult, selectedAssetIds, activeStyle, config.resolution, history]);
 
   const filteredHistory = useMemo(() => {
     return history.filter((item) => {
@@ -343,7 +348,9 @@ export default function GeneratePage() {
 
   const handleExportSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
-    const selected = history.filter((item) => selectedAssetIds.includes(item.id));
+    const selected = history.filter((item) =>
+      selectedAssetIds.includes(item.id),
+    );
     const zipBlob = await createExportPackage({
       name: "selected-assets",
       spriteItems: selected.map((item, index) => ({
@@ -373,7 +380,14 @@ export default function GeneratePage() {
       url: string;
       prompt: string;
       style: "pixel" | "flat" | "anime";
-      type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+      type:
+        | "character"
+        | "monster"
+        | "scene"
+        | "tile"
+        | "item"
+        | "ui"
+        | "effect";
       size: number;
     }) => {
       setHistory((prev) => {
@@ -447,20 +461,26 @@ export default function GeneratePage() {
   return (
     <div
       ref={container}
-      className="w-full flex flex-col gap-8 pb-32 max-w-400 mx-auto min-h-screen px-4 md:px-8"
+      className="w-full flex flex-col pb-32 max-w-[1600px] mx-auto min-h-screen px-4 md:px-8 overflow-hidden bg-slate-50 text-slate-900 selection:bg-[#0EA5E9] selection:text-white"
     >
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-8 pb-2">
+      {/* Background Effects */}
+      <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute top-0 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0EA5E9]/10 via-slate-50 to-slate-50 opacity-100"></div>
+        <div className="absolute w-[100vw] h-[100vh] bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      </div>
+
+      <header className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pt-10 pb-6 border-b border-black/5 mb-8">
         <div className="sidebar-item">
           <div className="flex items-center gap-2 mb-2">
-            <div className="px-2 py-0.5 rounded-md bg-[#0EA5E9]/10 text-[#0EA5E9] text-[10px] font-bold uppercase tracking-wider">
+            <div className="px-2.5 py-0.5 rounded-lg bg-white/80 border border-black/5 text-[#0EA5E9] text-[10px] font-bold uppercase tracking-wider shadow-sm">
               Editor v3.0
             </div>
-            <div className="w-1 h-1 rounded-full bg-gray-300" />
-            <span className="text-xs text-gray-400 font-medium tracking-tight">
+            <div className="w-1 h-1 rounded-full bg-slate-300" />
+            <span className="text-xs text-slate-500 font-medium tracking-tight">
               Supabase Cloud
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tighter text-gray-900">
+          <h1 className="text-3xl font-black tracking-tighter text-slate-900">
             创作实验室
           </h1>
         </div>
@@ -468,51 +488,19 @@ export default function GeneratePage() {
           <Link href="/showcase">
             <Button
               variant="outline"
-              className="h-10 gap-2 rounded-xl bg-white border-border/60 text-xs font-bold shadow-sm hover:shadow-md transition-all"
+              className="h-10 gap-2 rounded-xl bg-white/60 border-white/80 text-sm font-bold shadow-sm hover:bg-white/80 transition-all text-slate-700"
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-4 h-4" />
               探索图库
             </Button>
           </Link>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="rounded-xl bg-white border border-border/60 h-10 w-10"
-          >
-            <Info className="w-4 h-4 text-gray-400" />
-          </Button>
         </div>
       </header>
 
-      <section className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-8 items-start">
-        <div className="lg:col-span-1 xl:col-span-1 flex flex-col gap-6 lg:sticky lg:top-24">
+      <section className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Side: Creation Control Hub */}
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-6 lg:sticky lg:top-24">
           <div className="sidebar-item">
-            <StyleSelector value={activeStyle} onChange={setActiveStyle} />
-          </div>
-          <div className="sidebar-item">
-            <ParamControls value={config} onChange={setConfig} />
-          </div>
-          <div className="sidebar-item glass-panel p-6 rounded-3xl bg-black border-none text-white overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9] blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-xl bg-[#0EA5E9] flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-white fill-white" />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#0EA5E9]">
-                  Render Engine
-                </span>
-              </div>
-              <h3 className="text-sm font-bold mb-1">升级专业计划</h3>
-              <p className="text-[10px] text-gray-400 leading-relaxed">
-                获取 4K 无损输出与 10x 渲染加速
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-3 xl:col-span-4 flex flex-col gap-8">
-          <div className="main-preview">
             <PromptEditor
               value={prompt}
               onChange={setPrompt}
@@ -520,9 +508,38 @@ export default function GeneratePage() {
               onGenerate={handleGenerate}
             />
           </div>
+          <div className="sidebar-item w-full">
+            <StyleSelector value={activeStyle} onChange={setActiveStyle} />
+          </div>
+          <div className="sidebar-item w-full">
+            <ParamControls value={config} onChange={setConfig} />
+          </div>
 
-          <div className="main-preview min-h-160 flex flex-col group">
-            <div className="flex-1 relative">
+          <div className="sidebar-item bg-white/60 border border-white/80 backdrop-blur-xl p-6 rounded-[2rem] shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0EA5E9] blur-[60px] opacity-10 group-hover:opacity-20 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
+                  <Zap className="w-4 h-4 text-white fill-white" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-900">
+                  Render Engine
+                </span>
+              </div>
+              <h3 className="text-sm font-bold mb-1 text-slate-800">
+                升级专业计划
+              </h3>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                获取 4K 无损输出与 10x 渲染加速体验
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Main Canvas & Outputs */}
+        <div className="flex-1 flex flex-col gap-8 min-w-0">
+          <div className="main-preview relative w-full min-h-[500px] flex flex-col bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl shadow-slate-200/50 rounded-[2.5rem] p-6 lg:p-8">
+            <div className="flex-1 relative flex items-center justify-center">
               <PreviewCard
                 isGenerating={isGenerating}
                 status={genStatus}
@@ -538,18 +555,18 @@ export default function GeneratePage() {
                 }
               />
 
-              {/* Generate Button */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
-                <div className="relative">
-                  <div className="render-btn-glow absolute inset-0 bg-[#0EA5E9] blur-3xl rounded-full opacity-0 pointer-events-none" />
+              {/* Generate Button centrally positioned at the bottom of the canvas */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 w-full max-w-sm px-4">
+                <div className="relative w-full">
+                  <div className="render-btn-glow absolute inset-0 bg-[#0EA5E9] blur-2xl rounded-full opacity-5 pointer-events-none" />
                   <Button
                     size="lg"
                     onClick={handleGenerate}
                     disabled={!prompt || isGenerating}
-                    className="h-16 px-10 rounded-2xl bg-black hover:bg-black/90 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-lg shadow-2xl shadow-black/20 gap-4 group/btn overflow-hidden relative"
+                    className="w-full h-16 rounded-2xl bg-black hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-lg shadow-xl shadow-slate-500/20 gap-4 group/btn overflow-hidden relative transition-all"
                   >
-                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
-                    <div className="flex items-center gap-3 relative z-10">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                    <div className="flex items-center justify-center gap-3 relative z-10">
                       {isGenerating ? (
                         <RotateCw className="w-5 h-5 text-[#0EA5E9] animate-spin" />
                       ) : (
@@ -557,74 +574,120 @@ export default function GeneratePage() {
                       )}
                       {isGenerating ? "生成中..." : "立即生成素材"}
                     </div>
-                    <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black tracking-tighter relative z-10 border border-white/10">
-                      ENTER
-                    </div>
                   </Button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* History */}
-          <div className="history-section pt-4">
-            <div className="flex items-center justify-between mb-6 px-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white border border-border/50 flex items-center justify-center shadow-sm">
-                  <Box className="w-5 h-5 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900">
-                    会话资产集
-                  </h3>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    最近生成 · {history.length} 项
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/showcase"
-                className="text-xs font-bold text-[#0EA5E9] hover:underline"
+          {/* Tab Navigation for Extended Features */}
+          <div className="history-section mt-4 flex flex-col gap-4">
+            <div className="flex items-center gap-2 p-1.5 bg-white/60 backdrop-blur-md rounded-2xl w-fit mx-auto md:mx-0 border border-border/50 shadow-sm">
+              <button
+                onClick={() => setActiveTab("assets")}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  activeTab === "assets"
+                    ? "bg-white text-gray-900 shadow-sm border border-black/5"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
               >
-                查看全部记录
-              </Link>
+                <Box className="w-4 h-4" /> 资产管理与图集
+              </button>
+              <button
+                onClick={() => setActiveTab("animation")}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+                  activeTab === "animation"
+                    ? "bg-white text-purple-600 shadow-sm border border-purple-500/10"
+                    : "text-gray-500 hover:text-purple-600"
+                }`}
+              >
+                <Layers className="w-4 h-4" /> 动效序列预设
+              </button>
             </div>
-            <div className="px-2 mb-4">
-              <AnimationBuilder
-                userId={userId}
-                prompt={prompt}
-                style={activeStyle}
-                seed={config.seed ? Number(config.seed) : undefined}
-                negativePrompt={config.negativePrompt}
-                onFrameGenerated={handleSequenceFrameGenerated}
-              />
+
+            {/* Tab Contents */}
+            <div className="w-full relative">
+              {activeTab === "assets" && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 glass-panel p-6 rounded-3xl border border-border/50 bg-white/50 backdrop-blur-xl shadow-sm">
+                  <div className="flex items-center justify-between mb-6 px-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center">
+                        <Box className="w-5 h-5 text-[#0EA5E9]" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900">
+                          会话资产总览
+                        </h3>
+                        <p className="text-xs text-gray-500 font-medium">
+                          最近生成 · {history.length} 项资产
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/showcase"
+                      className="text-xs font-bold text-gray-500 hover:text-[#0EA5E9] underline underline-offset-4 decoration-border/50 hover:decoration-[#0EA5E9]/50 transition-colors"
+                    >
+                      查看所有历史
+                    </Link>
+                  </div>
+
+                  <div className="mb-6">
+                    <AssetsToolbar
+                      style={filterStyle}
+                      type={filterType}
+                      dateRange={filterDate}
+                      search={filterSearch}
+                      selectedCount={selectedAssetIds.length}
+                      onStyleChange={setFilterStyle}
+                      onTypeChange={setFilterType}
+                      onDateRangeChange={setFilterDate}
+                      onSearchChange={setFilterSearch}
+                      onDeleteSelected={handleDeleteSelected}
+                      onExportSelected={handleExportSelected}
+                    />
+                  </div>
+
+                  <SpritesheetBuilder
+                    items={filteredHistory}
+                    selectedIds={selectedAssetIds}
+                    onToggleSelect={toggleSelectAsset}
+                    format={sheetFormat}
+                    onFormatChange={setSheetFormat}
+                    isBuilding={isBuildingSheet}
+                    onBuild={handleBuildSpritesheet}
+                    result={sheetResult}
+                    onExportZip={handleExportPackage}
+                  />
+                </div>
+              )}
+
+              {activeTab === "animation" && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 glass-panel p-6 rounded-3xl border border-border/50 bg-white/50 backdrop-blur-xl shadow-sm">
+                  <div className="flex items-center gap-3 mb-6 px-2">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                      <Layers className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">
+                        动作序列预设
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium">
+                        基于当前配置与提示词，批量生成多方向的关键帧动画
+                      </p>
+                    </div>
+                  </div>
+
+                  <AnimationBuilder
+                    userId={userId}
+                    prompt={prompt}
+                    style={activeStyle}
+                    seed={config.seed ? Number(config.seed) : undefined}
+                    negativePrompt={config.negativePrompt}
+                    onFrameGenerated={handleSequenceFrameGenerated}
+                  />
+                </div>
+              )}
             </div>
-            <div className="px-2 mb-4">
-              <AssetsToolbar
-                style={filterStyle}
-                type={filterType}
-                dateRange={filterDate}
-                search={filterSearch}
-                selectedCount={selectedAssetIds.length}
-                onStyleChange={setFilterStyle}
-                onTypeChange={setFilterType}
-                onDateRangeChange={setFilterDate}
-                onSearchChange={setFilterSearch}
-                onDeleteSelected={handleDeleteSelected}
-                onExportSelected={handleExportSelected}
-              />
-            </div>
-            <SpritesheetBuilder
-              items={filteredHistory}
-              selectedIds={selectedAssetIds}
-              onToggleSelect={toggleSelectAsset}
-              format={sheetFormat}
-              onFormatChange={setSheetFormat}
-              isBuilding={isBuildingSheet}
-              onBuild={handleBuildSpritesheet}
-              result={sheetResult}
-              onExportZip={handleExportPackage}
-            />
           </div>
         </div>
       </section>

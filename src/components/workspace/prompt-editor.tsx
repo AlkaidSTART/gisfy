@@ -145,21 +145,14 @@ export default function PromptEditor({
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <div className="relative glass-panel rounded-4xl bg-white border-white shadow-xl shadow-blue-500/5 transition-all duration-500 group focus-within:shadow-2xl focus-within:shadow-blue-500/10 focus-within:ring-2 focus-within:ring-[#0EA5E9]/10">
-        <div className="absolute -top-3 left-8 flex items-center gap-2">
-          <div className="px-3 py-1 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border border-white/20">
-            <Wand2 className="w-3 h-3 text-[#0EA5E9]" />
-            AI Studio Mode
-          </div>
-        </div>
-
+      <div className="relative glass-panel rounded-[2rem] bg-white/60 backdrop-blur-xl border border-white/80 shadow-sm transition-all duration-500 group focus-within:shadow-md focus-within:bg-white/80 focus-within:ring-2 focus-within:ring-[#0EA5E9]/20">
         <div className="p-1">
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="描述想生成的素材：如 穿蓝盔甲的像素骑士"
-            className="w-full h-32 p-7 pt-8 bg-transparent border-none focus:ring-0 text-gray-800 placeholder:text-gray-300 font-medium leading-relaxed resize-none scrollbar-hide text-md"
+            className="w-full h-32 p-7 bg-transparent border-none focus:ring-0 text-slate-800 placeholder:text-slate-400 font-medium leading-relaxed resize-none scrollbar-hide text-md"
           />
         </div>
 
@@ -201,15 +194,15 @@ export default function PromptEditor({
           </div>
         )}
 
-        <div className="h-16 px-6 border-t border-gray-50 flex items-center justify-between">
+        <div className="h-14 px-5 border-t border-slate-200/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Upload reference image */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl hover:bg-blue-50 text-gray-400 hover:text-[#0EA5E9] transition-all flex items-center gap-1.5"
+              className="p-1.5 rounded-xl hover:bg-[#0EA5E9]/5 text-slate-400 hover:text-[#0EA5E9] transition-all flex items-center gap-1.5"
             >
               <Upload className="w-4 h-4" />
-              <span className="text-[9px] font-bold hidden sm:inline">
+              <span className="text-[10px] font-bold hidden sm:inline">
                 参考图
               </span>
             </button>
@@ -223,14 +216,14 @@ export default function PromptEditor({
                 if (f) handleImageUpload(f);
               }}
             />
-            <div className="h-4 w-px bg-gray-100"></div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 text-[10px] font-bold text-gray-500 border border-gray-100/50">
+            <div className="h-4 w-px bg-slate-200"></div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/50 text-[9px] font-bold text-slate-500 border border-slate-200/50 hidden sm:flex">
               <Info className="w-3 h-3" />
-              Enter 发送 · Shift+Enter 换行
+              Enter 发送
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -241,10 +234,9 @@ export default function PromptEditor({
                 setReferenceImage(null);
                 setVisionResult(null);
               }}
-              className="h-9 px-3 gap-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all font-bold text-xs"
+              className="h-8 px-2 gap-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all font-bold text-xs"
             >
               <Eraser className="w-3.5 h-3.5" />
-              清空
             </Button>
 
             <Button
@@ -253,17 +245,17 @@ export default function PromptEditor({
               disabled={!value || isPolishing}
               onClick={handleApplyPolish}
               className={cn(
-                "h-10 px-5 gap-2.5 rounded-xl border-dashed border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/5 font-black text-xs transition-all shadow-sm",
+                "h-8 px-3 gap-2 rounded-lg border-dashed border-[#0EA5E9]/30 text-[#0EA5E9] hover:bg-[#0EA5E9]/10 font-bold text-xs transition-all shadow-sm bg-white/50",
                 isPolishing && "animate-pulse",
               )}
             >
               <Sparkles
                 className={cn(
-                  "w-3.5 h-3.5 fill-[#0EA5E9]",
+                  "w-3 h-3 fill-[#0EA5E9]",
                   isPolishing && "animate-spin",
                 )}
               />
-              {isPolishing ? "AI 正在润色..." : "AI 智能润色"}
+              {isPolishing ? "润色中" : "智能润色"}
             </Button>
           </div>
         </div>
@@ -271,46 +263,30 @@ export default function PromptEditor({
 
       {/* Polish Result Panel */}
       {showDiff && polishedText && (
-        <div ref={polishRef} className="overflow-hidden">
-          <div className="glass-panel rounded-2xl bg-linear-to-r from-[#0EA5E9]/5 to-purple-500/5 border border-[#0EA5E9]/10 p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center">
-                <RefreshCw className="w-3.5 h-3.5 text-[#0EA5E9]" />
+        <div ref={polishRef} className="overflow-hidden mt-1">
+          <div className="glass-panel rounded-[1.25rem] bg-gradient-to-r from-[#0EA5E9]/5 to-purple-500/5 border border-[#0EA5E9]/20 p-4 shadow-sm backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-lg bg-[#0EA5E9]/10 flex items-center justify-center">
+                <RefreshCw className="w-3 h-3 text-[#0EA5E9]" />
               </div>
-              <span className="text-xs font-black text-[#0EA5E9] uppercase tracking-wider">
-                AI 润色建议（中文）
+              <span className="text-[11px] font-black text-[#0EA5E9] uppercase tracking-wider">
+                AI 润色建议
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {/* Original */}
-              <div className="bg-white/60 rounded-xl p-4 border border-gray-100">
-                <div className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  原始输入
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">{value}</p>
-              </div>
-
-              {/* Polished */}
-              <div className="bg-white/80 rounded-xl p-4 border border-[#0EA5E9]/20 shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles className="w-3 h-3 text-[#0EA5E9] fill-[#0EA5E9]" />
-                  <span className="text-[9px] font-bold text-[#0EA5E9] uppercase tracking-wider">
-                    润色结果
-                  </span>
-                </div>
-                <p className="text-xs text-gray-800 leading-relaxed font-medium">
-                  {polishedText}
-                </p>
-              </div>
+            <div className="bg-white/80 rounded-xl p-3 border border-[#0EA5E9]/20 shadow-sm mb-3 relative">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#0EA5E9] rounded-l-xl opacity-50"></div>
+              <p className="text-xs text-slate-700 leading-relaxed font-medium pl-1">
+                {polishedText}
+              </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={rejectPolish}
-                className="h-9 px-4 gap-2 rounded-xl text-gray-400 hover:text-red-500 font-bold text-xs"
+                className="h-8 px-3 gap-1.5 rounded-lg text-slate-400 hover:text-red-500 font-bold text-[11px]"
               >
                 <X className="w-3.5 h-3.5" />
                 拒绝
@@ -318,10 +294,10 @@ export default function PromptEditor({
               <Button
                 size="sm"
                 onClick={acceptPolish}
-                className="h-9 px-4 gap-2 rounded-xl bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold text-xs shadow-sm"
+                className="h-8 px-4 gap-1.5 rounded-lg bg-[#0EA5E9] hover:bg-[#0EA5E9]/90 text-white font-bold text-[11px] shadow-sm"
               >
-                <Check className="w-3.5 h-3.5" />
-                采用润色
+                <Check className="w-3.5 h-3.5 stroke-[3px]" />
+                采用建议
               </Button>
             </div>
           </div>

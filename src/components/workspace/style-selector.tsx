@@ -37,17 +37,17 @@ interface StyleSelectorProps {
 
 export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
   return (
-    <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border-white bg-white/60">
+    <div className="glass-panel p-6 rounded-[2rem] flex flex-col gap-6 shadow-sm border border-white/80 bg-white/60 backdrop-blur-xl">
       <div className="flex items-center justify-between px-1">
         <div className="flex flex-col">
-          <h2 className="text-xs font-black uppercase tracking-widest text-gray-400">
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
             视觉预设
           </h2>
-          <span className="text-sm font-bold text-gray-900 mt-1">
+          <span className="text-sm font-bold text-slate-900 mt-1">
             Render Styles
           </span>
         </div>
-        <div className="w-8 h-8 rounded-full bg-white border border-border/40 flex items-center justify-center shadow-sm">
+        <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
           <Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" />
         </div>
       </div>
@@ -64,8 +64,8 @@ export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
               className={cn(
                 "group relative w-full flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 overflow-hidden",
                 isActive
-                  ? "bg-white border-white shadow-lg shadow-blue-500/5 ring-1 ring-black/5"
-                  : "bg-transparent border-transparent hover:bg-white/40 hover:border-white",
+                  ? "bg-white border-white shadow-lg shadow-blue-500/5 ring-1 ring-slate-200/50"
+                  : "bg-transparent border-transparent hover:bg-white/50 hover:border-slate-200",
               )}
             >
               {/* Highlight bar */}
@@ -78,13 +78,13 @@ export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
                   "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300",
                   isActive
                     ? style.bg
-                    : "bg-white border border-border/40 shadow-sm group-hover:scale-105",
+                    : "bg-white/80 border border-slate-200 shadow-sm group-hover:scale-105",
                 )}
               >
                 <Icon
                   className={cn(
                     "w-5 h-5",
-                    isActive ? "text-[#0EA5E9]" : "text-gray-400",
+                    isActive ? "text-[#0EA5E9]" : "text-slate-400",
                   )}
                 />
               </div>
@@ -94,13 +94,13 @@ export default function StyleSelector({ value, onChange }: StyleSelectorProps) {
                   className={cn(
                     "text-sm font-bold tracking-tight transition-colors",
                     isActive
-                      ? "text-gray-900"
-                      : "text-gray-500 group-hover:text-gray-900",
+                      ? "text-slate-900"
+                      : "text-slate-500 group-hover:text-slate-900",
                   )}
                 >
                   {style.name}
                 </span>
-                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
                   {style.desc}
                 </span>
               </div>
