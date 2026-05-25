@@ -367,6 +367,39 @@ export default function GeneratePage() {
     saveAs(zipBlob, "selected-assets.zip");
   }, [selectedAssetIds, history, sheetResult]);
 
+  const handleSequenceFrameGenerated = useCallback(
+    (frame: {
+      id: string;
+      url: string;
+      prompt: string;
+      style: "pixel" | "flat" | "anime";
+      type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+      size: number;
+    }) => {
+      setHistory((prev) => {
+        if (prev.some((item) => item.id === frame.id)) return prev;
+        return [
+          {
+            id: frame.id,
+            url: frame.url,
+            prompt: frame.prompt,
+            style: frame.style,
+            type: frame.type,
+            size: frame.size,
+            timestamp: new Date().toISOString(),
+          },
+          ...prev,
+        ];
+      });
+      setLatestPreview({
+        url: frame.url,
+        prompt: frame.prompt,
+        style: frame.style,
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
     return stopPolling;
   }, [stopPolling]);
@@ -563,6 +596,7 @@ export default function GeneratePage() {
                 style={activeStyle}
                 seed={config.seed ? Number(config.seed) : undefined}
                 negativePrompt={config.negativePrompt}
+                onFrameGenerated={handleSequenceFrameGenerated}
               />
             </div>
             <div className="px-2 mb-4">

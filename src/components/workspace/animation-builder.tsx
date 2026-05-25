@@ -19,6 +19,14 @@ interface AnimationBuilderProps {
     directionLabel: string;
     prompt: string;
   }>) => void;
+  onFrameGenerated?: (frame: {
+    id: string;
+    url: string;
+    prompt: string;
+    style: Style;
+    type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
+    size: number;
+  }) => void;
 }
 
 type SequenceTask = {
@@ -41,6 +49,7 @@ export default function AnimationBuilder({
   seed,
   negativePrompt,
   onSequenceCreated,
+  onFrameGenerated,
 }: AnimationBuilderProps) {
   const [template, setTemplate] = useState<AnimationTemplate>("walk");
   const [direction, setDirection] = useState<2 | 4>(4);
@@ -49,6 +58,7 @@ export default function AnimationBuilder({
   const [taskProgress, setTaskProgress] = useState<Record<string, SequenceProgress>>({});
   const [sequenceError, setSequenceError] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const emittedTaskIdsRef = useRef<Set<string>>(new Set());
 
   const templateInfo = ANIMATION_TEMPLATES[template];
   const previewDirections = DIRECTION_LABELS[direction];
@@ -105,17 +115,19 @@ export default function AnimationBuilder({
             const res = await fetch(`/api/generate/status?taskId=${task.taskId}`);
             const json = await res.json();
             if (!res.ok || !json?.success) {
-              return [task.taskId, { status: "failed", progress: 0 } as SequenceProgress] as const;
+              return [task.taskId, { status: "failed", progress: 0 } as SequenceProgress, null] as const;
             }
+            const firstImage = Array.isArray(json.data.images) ? json.data.images[0] : null;
             return [
               task.taskId,
               {
                 status: json.data.status as TaskStatus,
                 progress: Number(json.data.progress) || 0,
               } as SequenceProgress,
+              firstImage,
             ] as const;
           } catch {
-            return [task.taskId, { status: "failed", progress: 0 } as SequenceProgress] as const;
+            return [task.taskId, { status: "failed", progress: 0 } as SequenceProgress, null] as const;
           }
         }),
       );
@@ -128,6 +140,20 @@ export default function AnimationBuilder({
         return next;
       });
 
+      for (const [taskId, p, firstImage] of updates) {
+        if (p.status !== "completed" || !firstImage) continue;
+        if (emittedTaskIdsRef.current.has(taskId)) continue;
+        emittedTaskIdsRef.current.add(taskId);
+        onFrameGenerated?.({
+          id: firstImage.id,
+          url: firstImage.url,
+          prompt: firstImage.prompt,
+          style: firstImage.style,
+          type: firstImage.type,
+          size: firstImage.size,
+        });
+      }
+
       const allDone = updates.every(([, p]) => p.status === "completed" || p.status === "failed");
       if (allDone) {
         stopPolling();
@@ -136,7 +162,7 @@ export default function AnimationBuilder({
     }, 1200);
 
     return stopPolling;
-  }, [tasks]);
+  }, [tasks, onFrameGenerated]);
 
   useEffect(() => stopPolling, []);
 
@@ -145,6 +171,7 @@ export default function AnimationBuilder({
     setIsGenerating(true);
     setSequenceError(null);
     setTaskProgress({});
+    emittedTaskIdsRef.current.clear();
 
     try {
       const res = await fetch("/api/generate/sequence", {

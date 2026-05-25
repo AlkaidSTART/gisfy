@@ -60,7 +60,7 @@ export default function SpritesheetBuilder({
     const height = rows * cell + (rows + 1) * padding;
     const dpr = window.devicePixelRatio || 1;
 
-    canvas.style.width = "100%";
+    canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
@@ -172,10 +172,12 @@ export default function SpritesheetBuilder({
           </div>
         </div>
 
-        <canvas
-          ref={canvasRef}
-          className="w-full rounded-2xl border border-border/50 bg-white shadow-inner"
-        />
+        <div className="w-full overflow-x-auto">
+          <canvas
+            ref={canvasRef}
+            className="block rounded-2xl border border-border/50 bg-white shadow-inner"
+          />
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <select
