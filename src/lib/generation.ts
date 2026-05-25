@@ -4,6 +4,10 @@ import { generateWithAli } from "@/lib/ali";
 import { uploadToSupabase } from "@/lib/supabase-storage";
 import { createTask, updateTask } from "@/lib/store/task-store";
 import { upsertAssets } from "@/lib/asset-repo";
+import {
+  enqueueGenerationTask,
+  ensureGenerationWorker,
+} from "@/lib/generation-queue";
 import type { Asset, AssetType, GenerateTask, Style } from "@/types";
 
 function mockBase64Png() {
@@ -54,18 +58,13 @@ export function createGenerationTask(
   return taskId;
 }
 
-export function startGenerationTask(input: StartTaskInput, userId = "default") {
+export async function startGenerationTask(
+  input: StartTaskInput,
+  userId = "default",
+) {
   const taskId = createGenerationTask(input);
-  const task: GenerateTask = {
-    taskId,
-    status: "queued",
-    progress: 0,
-    prompt: input.prompt,
-    style: input.style,
-    type: input.type,
-    createdAt: new Date().toISOString(),
-  };
-  void runGeneration(task, input, userId);
+  await enqueueGenerationTask({ taskId, userId, body: input });
+  ensureGenerationWorker();
 
   return taskId;
 }
@@ -95,8 +94,12 @@ async function runGeneration(
   body: StartTaskInput,
   userId: string,
 ) {
+  const timeoutMs = Math.max(
+    1_000,
+    Number(process.env.GENERATE_TASK_TIMEOUT_MS ?? 120_000),
+  );
   try {
-    updateTask(task.taskId, { status: "processing", progress: 20 });
+    await updateTask(task.taskId, { status: "processing", progress: 20 });
 
     const built =
       body.promptMode === "raw"
@@ -113,70 +116,77 @@ async function runGeneration(
       size: number;
     }>;
 
-    if (!process.env.ALI_API_KEY) {
-      images = Array.from({ length: body.count }).map(() => ({
-        id: `gisfy_${randomUUID().slice(0, 8)}`,
-        url: mockBase64Png(),
-        prompt: body.prompt,
-        style: body.style,
-        type: body.type,
-        size: body.size,
-      }));
-      await new Promise((r) => setTimeout(r, 1200));
-    } else {
-      const aiResult = await retry(() =>
-        generateWithAli({
-          prompt: built.prompt,
-          size: Math.max(body.size, 512),
-          count: body.count,
-          seed: body.seed,
-        }),
-      );
+    await Promise.race([
+      (async () => {
+        if (!process.env.ALI_API_KEY) {
+          images = Array.from({ length: body.count }).map(() => ({
+            id: `gisfy_${randomUUID().slice(0, 8)}`,
+            url: mockBase64Png(),
+            prompt: body.prompt,
+            style: body.style,
+            type: body.type,
+            size: body.size,
+          }));
+          await new Promise((r) => setTimeout(r, 1200));
+        } else {
+          const aiResult = await retry(() =>
+            generateWithAli({
+              prompt: built.prompt,
+              size: Math.max(body.size, 512),
+              count: body.count,
+              seed: body.seed,
+            }),
+          );
 
-      images = aiResult.images.map((img) => ({
-        id: `gisfy_${randomUUID().slice(0, 8)}`,
-        url: img.base64 ? `data:image/png;base64,${img.base64}` : "",
-        prompt: body.prompt,
-        style: body.style,
-        type: body.type,
-        size: body.size,
-      }));
-    }
-
-    updateTask(task.taskId, { status: "uploading", progress: 70 });
-
-    const uploaded = await Promise.all(
-      images.map(async (img) => {
-        if (!process.env.SUPABASE_URL) {
-          return { ...img, url: img.url };
+          images = aiResult.images.map((img) => ({
+            id: `gisfy_${randomUUID().slice(0, 8)}`,
+            url: img.base64 ? `data:image/png;base64,${img.base64}` : "",
+            prompt: body.prompt,
+            style: body.style,
+            type: body.type,
+            size: body.size,
+          }));
         }
-        const result = await uploadToSupabase({
+
+        await updateTask(task.taskId, { status: "uploading", progress: 70 });
+
+        const uploaded = await Promise.all(
+          images.map(async (img) => {
+            if (!process.env.SUPABASE_URL) {
+              return { ...img, url: img.url };
+            }
+            const result = await uploadToSupabase({
+              id: img.id,
+              base64: img.url,
+              filename: `${img.type}_${img.style}_${img.id}.png`,
+            });
+            return { ...img, url: result.cdnUrl };
+          }),
+        );
+
+        const assets: Asset[] = uploaded.map((img) => ({
           id: img.id,
-          base64: img.url,
-          filename: `${img.type}_${img.style}_${img.id}.png`,
+          cdnUrl: img.url,
+          prompt: img.prompt,
+          style: img.style,
+          type: img.type,
+          size: img.size as 64 | 128 | 256 | 512,
+          cost: 0,
+          duration: (Date.now() - startedAt) / 1000,
+          createdAt: new Date().toISOString(),
+        }));
+        await upsertAssets(userId, assets);
+
+        await updateTask(task.taskId, {
+          status: "completed",
+          progress: 100,
+          images: uploaded,
         });
-        return { ...img, url: result.cdnUrl };
-      }),
-    );
-
-    const assets: Asset[] = uploaded.map((img) => ({
-      id: img.id,
-      cdnUrl: img.url,
-      prompt: img.prompt,
-      style: img.style,
-      type: img.type,
-      size: img.size as 64 | 128 | 256 | 512,
-      cost: 0,
-      duration: (Date.now() - startedAt) / 1000,
-      createdAt: new Date().toISOString(),
-    }));
-    await upsertAssets(userId, assets);
-
-    updateTask(task.taskId, {
-      status: "completed",
-      progress: 100,
-      images: uploaded,
-    });
+      })(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("task_timeout")), timeoutMs),
+      ),
+    ]);
   } catch (error) {
     const message =
       error instanceof Error
@@ -187,6 +197,6 @@ async function runGeneration(
       message,
       JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
     );
-    updateTask(task.taskId, { status: "failed", progress: 0, error: message });
+    await updateTask(task.taskId, { status: "failed", progress: 0, error: message });
   }
 }

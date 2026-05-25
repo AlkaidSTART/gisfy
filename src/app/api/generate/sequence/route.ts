@@ -1,12 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { after } from "next/server";
 import { generateSequenceRequestSchema, type SequenceTaskInfo } from "@/types";
 import { fail, ok } from "@/lib/response";
 import {
   ANIMATION_TEMPLATES,
   DIRECTION_LABELS,
 } from "@/lib/animation-templates";
-import { createGenerationTask, runGenerationTask } from "@/lib/generation";
+import { createGenerationTask } from "@/lib/generation";
+import {
+  enqueueGenerationTask,
+  ensureGenerationWorker,
+} from "@/lib/generation-queue";
 
 export const maxDuration = 300;
 
@@ -93,8 +96,6 @@ export async function POST(req: Request) {
     );
 
     const tasks: SequenceTaskInfo[] = [];
-    const queue: Array<{ taskId: string; prompt: string }> = [];
-
     for (let direction = 0; direction < directionCount; direction += 1) {
       for (let frame = 1; frame <= template.frames; frame += 1) {
         const directionLabel = directions[direction] ?? String(direction + 1);
@@ -126,7 +127,20 @@ export async function POST(req: Request) {
           },
           taskId,
         );
-        queue.push({ taskId, prompt: enrichedPrompt });
+        await enqueueGenerationTask({
+          taskId,
+          userId,
+          body: {
+            prompt: enrichedPrompt,
+            style: body.style,
+            type: "character",
+            size: body.size,
+            count: 1,
+            seed: sharedSeed,
+            negativePrompt: sequenceNegativePrompt,
+            promptMode: "raw",
+          },
+        });
 
         tasks.push({
           taskId,
@@ -137,25 +151,7 @@ export async function POST(req: Request) {
         });
       }
     }
-
-    after(async () => {
-      for (const item of queue) {
-        await runGenerationTask(
-          item.taskId,
-          {
-            prompt: item.prompt,
-            style: body.style,
-            type: "character",
-            size: body.size,
-            count: 1,
-            seed: sharedSeed,
-            negativePrompt: sequenceNegativePrompt,
-            promptMode: "raw",
-          },
-          userId,
-        );
-      }
-    });
+    ensureGenerationWorker();
 
     return ok({
       sequenceId,

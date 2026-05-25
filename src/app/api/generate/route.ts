@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     const body = parsed.data;
     const userId = (json as { userId?: string }).userId || "default";
-    const taskId = startGenerationTask(body, userId);
+    const taskId = await startGenerationTask(body, userId);
 
     return ok({ taskId, status: "queued" });
   } catch (error) {

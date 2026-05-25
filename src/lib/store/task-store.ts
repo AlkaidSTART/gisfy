@@ -23,7 +23,24 @@ async function persistTask(task: GenerateTask) {
   }
 }
 
+async function readTaskFromRedis(taskId: string): Promise<GenerateTask | undefined> {
+  if (!hasRedis) return undefined;
+  try {
+    const raw = await redis.get(taskKey(taskId));
+    if (!raw) return undefined;
+    return JSON.parse(raw) as GenerateTask;
+  } catch (error) {
+    console.warn("[task-store] read redis failed:", error);
+    return undefined;
+  }
+}
+
 export function createTask(task: GenerateTask) {
+  tasks.set(task.taskId, task);
+  void persistTask(task);
+}
+
+export function upsertTask(task: GenerateTask) {
   tasks.set(task.taskId, task);
   void persistTask(task);
 }
@@ -31,27 +48,31 @@ export function createTask(task: GenerateTask) {
 export async function getTask(taskId: string): Promise<GenerateTask | undefined> {
   const local = tasks.get(taskId);
   if (local) return local;
-  if (!hasRedis) return undefined;
-
-  try {
-    const raw = await redis.get(taskKey(taskId));
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as GenerateTask;
-    tasks.set(taskId, parsed);
-    return parsed;
-  } catch (error) {
-    console.warn("[task-store] read redis failed:", error);
-    return undefined;
-  }
+  const parsed = await readTaskFromRedis(taskId);
+  if (!parsed) return undefined;
+  tasks.set(taskId, parsed);
+  return parsed;
 }
 
-export function updateTask(taskId: string, update: Partial<GenerateTask>) {
-  const task = tasks.get(taskId);
-  if (task) {
-    Object.assign(task, update);
-    tasks.set(taskId, task);
-    void persistTask(task);
-  }
+export async function updateTask(
+  taskId: string,
+  update: Partial<GenerateTask>,
+): Promise<boolean> {
+  const local = tasks.get(taskId);
+  const base = local ?? (await readTaskFromRedis(taskId));
+  if (!base) return false;
+
+  const merged = { ...base, ...update };
+  tasks.set(taskId, merged);
+  await persistTask(merged);
+  return true;
+}
+
+export async function touchTask(taskId: string): Promise<boolean> {
+  const task = await getTask(taskId);
+  if (!task) return false;
+  await persistTask(task);
+  return true;
 }
 
 // Cleanup tasks older than 1 hour
