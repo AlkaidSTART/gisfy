@@ -66,6 +66,10 @@ type FrameImage = {
   url: string;
 };
 
+const POLL_MAX_ERRORS = 6;
+const POLL_TIMEOUT_MS = 180_000;
+const POLL_BATCH_SIZE = 4;
+
 export default function AnimationBuilder({
   prompt: externalPrompt,
   style,
@@ -90,7 +94,7 @@ export default function AnimationBuilder({
   const [frameImages, setFrameImages] = useState<FrameImage[]>([]);
   const [visionPrompt, setVisionPrompt] = useState<string | null>(null);
   const [visionError, setVisionError] = useState<string | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const emittedTaskIdsRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const analyzedReferenceRef = useRef<string | null>(null);
@@ -108,7 +112,7 @@ export default function AnimationBuilder({
 
   const stopPolling = () => {
     if (pollingRef.current) {
-      clearInterval(pollingRef.current);
+      clearTimeout(pollingRef.current);
       pollingRef.current = null;
     }
   };
@@ -150,13 +154,21 @@ export default function AnimationBuilder({
     }
 
     stopPolling();
-    pollingRef.current = setInterval(async () => {
+    const startedAt = Date.now();
+    let delay = 1200;
+    let errors = 0;
+
+    const tick = async () => {
+      const pending = tasks.filter((task) => {
+        const state = taskProgress[task.taskId];
+        return state?.status !== "completed" && state?.status !== "failed";
+      });
+      const batch = (pending.length > 0 ? pending : tasks).slice(0, POLL_BATCH_SIZE);
+
       const updates = await Promise.all(
-        tasks.map(async (task) => {
+        batch.map(async (task) => {
           try {
-            const res = await fetch(
-              `/api/generate/status?taskId=${task.taskId}`,
-            );
+            const res = await fetch(`/api/generate/status?taskId=${task.taskId}`);
             const json = await res.json();
             if (!res.ok || !json?.success) {
               return [
@@ -198,6 +210,13 @@ export default function AnimationBuilder({
         }),
       );
 
+      if (updates.every(([, p]) => p.status === "failed")) {
+        errors += 1;
+      } else {
+        errors = 0;
+      }
+      delay = errors > 0 ? Math.min(delay + 1000, 5000) : 1200;
+
       setTaskProgress((prev) => {
         const next = { ...prev };
         for (const [taskId, p] of updates) {
@@ -218,11 +237,9 @@ export default function AnimationBuilder({
           type: firstImage.type,
           size: firstImage.size,
         });
-        // Track frame image for cover display
         setFrameImages((prev) => {
           const exists = prev.some(
-            (f) =>
-              f.frame === taskMeta.frame && f.direction === taskMeta.direction,
+            (f) => f.frame === taskMeta.frame && f.direction === taskMeta.direction,
           );
           if (exists) return prev;
           return [
@@ -236,18 +253,33 @@ export default function AnimationBuilder({
         });
       }
 
-      const allDone = updates.every(
-        ([, p]) => p.status === "completed" || p.status === "failed",
-      );
-      if (allDone) {
+      const allDone = tasks.every((task) => {
+        const state = taskProgress[task.taskId];
+        return state?.status === "completed" || state?.status === "failed";
+      });
+      if (
+        allDone ||
+        errors >= POLL_MAX_ERRORS ||
+        Date.now() - startedAt > POLL_TIMEOUT_MS
+      ) {
         stopPolling();
         setIsGenerating(false);
+        if (!allDone) {
+          setSequenceError("动画任务状态查询超时，请稍后重试");
+        }
         onSequenceFinished?.();
+        return;
       }
-    }, 1200);
+
+      pollingRef.current = setTimeout(() => {
+        void tick();
+      }, delay);
+    };
+
+    void tick();
 
     return stopPolling;
-  }, [tasks, onFrameGenerated, onSequenceFinished]);
+  }, [tasks, taskProgress, onFrameGenerated, onSequenceFinished]);
 
   useEffect(() => stopPolling, []);
 

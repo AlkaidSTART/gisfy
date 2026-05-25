@@ -19,7 +19,12 @@ import { createExportPackage } from "@/lib/export";
 import { useAuth } from "@/lib/store/auth-store";
 
 gsap.registerPlugin(useGSAP);
-const FILTER_NOW_TS = Date.now();
+const POLL_TIMEOUT_MS = 180_000;
+const POLL_MAX_ERRORS = 6;
+const EXPORT_MAX_ITEMS = Math.max(
+  1,
+  Number(process.env.NEXT_PUBLIC_EXPORT_MAX_ITEMS ?? 100),
+);
 
 interface Asset {
   id: string;
@@ -71,6 +76,8 @@ export default function GeneratePage() {
     negativePrompt: "",
   });
   const [history, setHistory] = useState<Asset[]>([]);
+  const [assetsLoadError, setAssetsLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [filterStyle, setFilterStyle] = useState<FilterStyle>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterDate, setFilterDate] = useState<FilterDate>("all");
@@ -93,7 +100,7 @@ export default function GeneratePage() {
     prompt: string;
     style: "pixel" | "flat" | "anime";
   } | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockedSeedRef = useRef<number | undefined>(undefined);
 
   const loadAssets = useCallback(async () => {
@@ -103,7 +110,10 @@ export default function GeneratePage() {
         { cache: "no-store" },
       );
       const json = await res.json();
-      if (!json?.success) return;
+      if (!json?.success) {
+        setAssetsLoadError(json?.error?.message || "素材加载失败");
+        return;
+      }
       const items: Asset[] = json.data.assets.map(
         (a: {
           id: string;
@@ -131,14 +141,16 @@ export default function GeneratePage() {
         }),
       );
       setHistory(items);
+      setAssetsLoadError(null);
     } catch (e) {
       console.error(e);
+      setAssetsLoadError("素材加载失败，请稍后重试");
     }
   }, [userId]);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
-      clearInterval(pollingRef.current);
+      clearTimeout(pollingRef.current);
       pollingRef.current = null;
     }
   }, []);
@@ -146,11 +158,32 @@ export default function GeneratePage() {
   const pollTask = useCallback(
     (taskId: string) => {
       stopPolling();
-      pollingRef.current = setInterval(async () => {
+      const startedAt = Date.now();
+      let errors = 0;
+      let delay = 1000;
+
+      const tick = async () => {
         try {
           const res = await fetch(`/api/generate/status?taskId=${taskId}`);
           const json = await res.json();
-          if (!json?.success) return;
+          if (!json?.success) {
+            errors += 1;
+            if (errors >= POLL_MAX_ERRORS || Date.now() - startedAt > POLL_TIMEOUT_MS) {
+              stopPolling();
+              setIsGenerating(false);
+              setGenStatus("failed");
+              setActionError(json?.error?.message || "任务状态查询失败");
+              return;
+            }
+            delay = Math.min(delay + 1000, 5000);
+            pollingRef.current = setTimeout(() => {
+              void tick();
+            }, delay);
+            return;
+          }
+
+          errors = 0;
+          delay = 1000;
 
           const { status, progress, images } = json.data;
           setGenStatus(status);
@@ -169,32 +202,59 @@ export default function GeneratePage() {
             stopPolling();
             setIsGenerating(false);
             await loadAssets();
+            return;
           } else if (status === "failed") {
             stopPolling();
             setIsGenerating(false);
+            setActionError(json.data.error || "生成失败");
+            return;
           }
         } catch {
-          /* poll error, keep trying */
+          errors += 1;
+          if (errors >= POLL_MAX_ERRORS || Date.now() - startedAt > POLL_TIMEOUT_MS) {
+            stopPolling();
+            setIsGenerating(false);
+            setGenStatus("failed");
+            setActionError("任务状态查询网络错误");
+            return;
+          }
+          delay = Math.min(delay + 1000, 5000);
         }
-      }, 1000);
+        pollingRef.current = setTimeout(() => {
+          void tick();
+        }, delay);
+      };
+
+      void tick();
     },
     [stopPolling, loadAssets],
   );
+
+  const parseSeed = useCallback((raw: string): number | undefined => {
+    const value = raw.trim();
+    if (!value) return undefined;
+    if (!/^-?\d+$/.test(value)) {
+      throw new Error("Seed 必须是整数");
+    }
+    return Number(value);
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt || isGenerating) return;
     setIsGenerating(true);
     setGenStatus("queued");
     setGenProgress(5);
+    setActionError(null);
 
     try {
+      const parsedSeed = parseSeed(config.seed);
       const currentSeed = config.lockSeed
         ? (lockedSeedRef.current ??
-          (config.seed
-            ? Number(config.seed)
+          (parsedSeed !== undefined
+            ? parsedSeed
             : Math.floor(Math.random() * 2_147_483_647)))
-        : config.seed
-          ? Number(config.seed)
+        : parsedSeed !== undefined
+          ? parsedSeed
           : undefined;
       if (config.lockSeed) {
         lockedSeedRef.current = currentSeed;
@@ -236,6 +296,7 @@ export default function GeneratePage() {
     config.negativePrompt,
     userId,
     pollTask,
+    parseSeed,
   ]);
 
   const handleBuildSpritesheet = useCallback(async () => {
@@ -283,6 +344,7 @@ export default function GeneratePage() {
 
   const handleExportPackage = useCallback(async () => {
     if (!sheetResult || selectedAssetIds.length === 0) return;
+    setActionError(null);
     const manifest = {
       name: "spritesheet",
       style: activeStyle,
@@ -311,7 +373,7 @@ export default function GeneratePage() {
       });
       saveAs(zipBlob, "spritesheet.zip");
     } catch (error) {
-      console.error(error);
+      setActionError(error instanceof Error ? error.message : "导出失败");
     }
   }, [sheetResult, selectedAssetIds, activeStyle, config.resolution, history]);
 
@@ -326,16 +388,10 @@ export default function GeneratePage() {
         return false;
       }
       if (filterDate === "today") {
-        return (
-          FILTER_NOW_TS - new Date(item.timestamp).getTime() <=
-          24 * 60 * 60 * 1000
-        );
+        return Date.now() - new Date(item.timestamp).getTime() <= 24 * 60 * 60 * 1000;
       }
       if (filterDate === "week") {
-        return (
-          FILTER_NOW_TS - new Date(item.timestamp).getTime() <=
-          7 * 24 * 60 * 60 * 1000
-        );
+        return Date.now() - new Date(item.timestamp).getTime() <= 7 * 24 * 60 * 60 * 1000;
       }
       return true;
     });
@@ -365,7 +421,8 @@ export default function GeneratePage() {
 
   const handleDeleteSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
-    await Promise.all(
+    setActionError(null);
+    const results = await Promise.allSettled(
       selectedAssetIds.map((id) =>
         fetch("/api/assets", {
           method: "DELETE",
@@ -374,36 +431,55 @@ export default function GeneratePage() {
         }),
       ),
     );
-    setSelectedAssetIds([]);
+    const failedIds: string[] = [];
+    for (let i = 0; i < results.length; i += 1) {
+      const r = results[i];
+      if (r.status === "rejected" || !r.value.ok) {
+        failedIds.push(selectedAssetIds[i]);
+      }
+    }
+    setSelectedAssetIds(failedIds);
+    if (failedIds.length > 0) {
+      setActionError(`删除部分失败：${failedIds.length} 项`);
+    }
     await loadAssets();
   }, [selectedAssetIds, loadAssets, userId]);
 
   const handleExportSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
+    setActionError(null);
+    if (selectedAssetIds.length > EXPORT_MAX_ITEMS) {
+      setActionError(`导出数量超限，最多 ${EXPORT_MAX_ITEMS} 项`);
+      return;
+    }
     const selected = selectedAssetIds
       .map((id) => history.find((item) => item.id === id))
       .filter((item): item is Asset => Boolean(item));
-    const zipBlob = await createExportPackage({
-      name: "selected-assets",
-      spriteItems: selected.map((item, index) => ({
-        filename: `sprite_${String(index + 1).padStart(2, "0")}_${item.id}.png`,
-        url: item.url,
-      })),
-      spritesheet: {
-        pngUrl:
-          sheetResult?.pngUrl ??
-          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=",
-        jsonUrl:
-          sheetResult?.jsonUrl ??
-          "data:application/json;base64,eyJmcmFtZXMiOltdLCJtZXRhIjp7fX0=",
-      },
-      manifest: {
+    try {
+      const zipBlob = await createExportPackage({
         name: "selected-assets",
-        count: selected.length,
-        generatedAt: new Date().toISOString(),
-      },
-    });
-    saveAs(zipBlob, "selected-assets.zip");
+        spriteItems: selected.map((item, index) => ({
+          filename: `sprite_${String(index + 1).padStart(2, "0")}_${item.id}.png`,
+          url: item.url,
+        })),
+        spritesheet: {
+          pngUrl:
+            sheetResult?.pngUrl ??
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=",
+          jsonUrl:
+            sheetResult?.jsonUrl ??
+            "data:application/json;base64,eyJmcmFtZXMiOltdLCJtZXRhIjp7fX0=",
+        },
+        manifest: {
+          name: "selected-assets",
+          count: selected.length,
+          generatedAt: new Date().toISOString(),
+        },
+      });
+      saveAs(zipBlob, "selected-assets.zip");
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "导出失败");
+    }
   }, [selectedAssetIds, history, sheetResult]);
 
   const handleSequenceFrameGenerated = useCallback(
@@ -665,6 +741,11 @@ export default function GeneratePage() {
                   </div>
 
                   <div className="mb-6">
+                    {(assetsLoadError || actionError) && (
+                      <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                        {assetsLoadError || actionError}
+                      </div>
+                    )}
                     <AssetsToolbar
                       style={filterStyle}
                       type={filterType}
@@ -721,7 +802,11 @@ export default function GeneratePage() {
                     userId={userId}
                     prompt={prompt}
                     style={activeStyle}
-                    seed={config.seed ? Number(config.seed) : undefined}
+                    seed={
+                      config.seed.trim() && /^-?\d+$/.test(config.seed.trim())
+                        ? Number(config.seed.trim())
+                        : undefined
+                    }
                     negativePrompt={config.negativePrompt}
                     referenceImage={referenceImage}
                     onReferenceImageChange={setReferenceImage}
