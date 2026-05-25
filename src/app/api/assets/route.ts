@@ -9,7 +9,7 @@ import {
   deleteAsset,
   listAssets,
   upsertAssets,
-} from "@/lib/store/assets-store";
+} from "@/lib/asset-repo";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const { page, limit, sort, style, type } = parsed.data;
   const userId = url.searchParams.get("userId") || "default";
 
-  let assets = listAssets(userId);
+  let assets = await listAssets(userId);
   if (style) assets = assets.filter((a) => a.style === style);
   if (type) assets = assets.filter((a) => a.type === type);
 
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       });
     });
 
-    upsertAssets(userId, parsedItems);
+    await upsertAssets(userId, parsedItems);
     return ok({ saved: parsedItems.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : "保存失败";
@@ -97,7 +97,7 @@ export async function DELETE(req: Request) {
     }
 
     const userId = json?.userId || "default";
-    const removed = deleteAsset(userId, parsed.data.id);
+    const removed = await deleteAsset(userId, parsed.data.id);
     if (!removed) {
       return fail("not_found", "素材不存在", 404);
     }

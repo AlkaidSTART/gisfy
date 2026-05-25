@@ -16,6 +16,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { TaskStatus } from "@/types";
 import { createExportPackage } from "@/lib/export";
+import { useAuth } from "@/lib/store/auth-store";
 
 gsap.registerPlugin(useGSAP);
 const FILTER_NOW_TS = Date.now();
@@ -44,6 +45,8 @@ type FilterDate = "today" | "week" | "all";
 
 export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const userId = user?.id ?? "default";
 
   const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">(
     "pixel",
@@ -87,10 +90,8 @@ export default function GeneratePage() {
   const loadAssets = useCallback(async () => {
     try {
       const res = await fetch(
-        "/api/assets?page=1&limit=20&sort=newest&userId=default",
-        {
-          cache: "no-store",
-        },
+        `/api/assets?page=1&limit=20&sort=newest&userId=${encodeURIComponent(userId)}`,
+        { cache: "no-store" },
       );
       const json = await res.json();
       if (!json?.success) return;
@@ -124,7 +125,7 @@ export default function GeneratePage() {
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [userId]);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
@@ -193,6 +194,7 @@ export default function GeneratePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId,
           prompt,
           style: activeStyle,
           type: "character",
@@ -220,6 +222,7 @@ export default function GeneratePage() {
     config.seed,
     config.lockSeed,
     config.negativePrompt,
+    userId,
     pollTask,
   ]);
 
@@ -232,6 +235,7 @@ export default function GeneratePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId,
           assetIds,
           format: sheetFormat,
           name: "spritesheet",
@@ -249,7 +253,7 @@ export default function GeneratePage() {
     } finally {
       setIsBuildingSheet(false);
     }
-  }, [selectedAssetIds, sheetFormat, isBuildingSheet]);
+  }, [selectedAssetIds, sheetFormat, isBuildingSheet, userId]);
 
   const toggleSelectAsset = useCallback((id: string) => {
     setSelectedAssetIds((prev) =>
@@ -329,13 +333,13 @@ export default function GeneratePage() {
         fetch("/api/assets", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, userId: "default" }),
+          body: JSON.stringify({ id, userId }),
         }),
       ),
     );
     setSelectedAssetIds([]);
     await loadAssets();
-  }, [selectedAssetIds, loadAssets]);
+  }, [selectedAssetIds, loadAssets, userId]);
 
   const handleExportSelected = useCallback(async () => {
     if (selectedAssetIds.length === 0) return;
@@ -554,6 +558,7 @@ export default function GeneratePage() {
             </div>
             <div className="px-2 mb-4">
               <AnimationBuilder
+                userId={userId}
                 prompt={prompt}
                 style={activeStyle}
                 seed={config.seed ? Number(config.seed) : undefined}

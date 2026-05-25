@@ -12,7 +12,7 @@ import { buildPrompt } from "@/lib/prompt-templates";
 import { generateWithAli } from "@/lib/ali";
 import { uploadToSupabase } from "@/lib/supabase-storage";
 import { createTask } from "@/lib/store/task-store";
-import { upsertAssets } from "@/lib/store/assets-store";
+import { upsertAssets } from "@/lib/asset-repo";
 
 function toBufferFromDataUrl(dataUrl: string) {
   const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
     }
 
     if (assets.length > 0) {
-      upsertAssets(userId, assets);
+      await upsertAssets(userId, assets);
     }
 
     return ok({

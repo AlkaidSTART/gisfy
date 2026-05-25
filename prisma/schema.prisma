@@ -17,3 +17,20 @@ model User {
 
   @@map("users")
 }
+
+model Asset {
+  id        String   @id
+  userId    String   @map("user_id")
+  cdnUrl    String   @map("cdn_url")
+  prompt    String
+  style     String
+  type      String
+  size      Int
+  seed      Int?
+  cost      Float    @default(0)
+  duration  Float    @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("assets")
+}

@@ -9,6 +9,7 @@ import type { AnimationTemplate, Style, TaskStatus } from "@/types";
 interface AnimationBuilderProps {
   prompt: string;
   style: Style;
+  userId?: string;
   seed?: number;
   negativePrompt?: string;
   onSequenceCreated?: (tasks: Array<{
@@ -36,6 +37,7 @@ type SequenceProgress = {
 export default function AnimationBuilder({
   prompt,
   style,
+  userId,
   seed,
   negativePrompt,
   onSequenceCreated,
@@ -149,6 +151,7 @@ export default function AnimationBuilder({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId,
           prompt,
           style,
           size: 256,

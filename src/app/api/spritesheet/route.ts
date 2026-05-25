@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { spritesheetConfigSchema } from "@/types";
 import { fail, ok } from "@/lib/response";
-import { getAssetsByIds } from "@/lib/store/assets-store";
+import { getAssetsByIds } from "@/lib/asset-repo";
 import { exportSpritesheetJson, packSpritesheet } from "@/lib/spritesheet";
 import { uploadToSupabase } from "@/lib/supabase-storage";
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     const body = parsed.data;
     const userId = (json as { userId?: string }).userId || "default";
-    const assets = getAssetsByIds(userId, body.assetIds);
+    const assets = await getAssetsByIds(userId, body.assetIds);
     if (assets.length !== body.assetIds.length) {
       return fail("not_found", "部分素材不存在", 404);
     }

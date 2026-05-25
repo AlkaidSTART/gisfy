@@ -3,7 +3,7 @@ import { buildPrompt } from "@/lib/prompt-templates";
 import { generateWithAli } from "@/lib/ali";
 import { uploadToSupabase } from "@/lib/supabase-storage";
 import { createTask, updateTask } from "@/lib/store/task-store";
-import { upsertAssets } from "@/lib/store/assets-store";
+import { upsertAssets } from "@/lib/asset-repo";
 import type { Asset, AssetType, GenerateTask, Style } from "@/types";
 
 function mockBase64Png() {
@@ -114,7 +114,7 @@ async function runGeneration(
       duration: (Date.now() - startedAt) / 1000,
       createdAt: new Date().toISOString(),
     }));
-    upsertAssets(userId, assets);
+    await upsertAssets(userId, assets);
 
     updateTask(task.taskId, {
       status: "completed",
