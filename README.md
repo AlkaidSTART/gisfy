@@ -16,17 +16,17 @@
 
 ### 🔗 相关链接
 
-| 链接                  | 地址                                                                     |
-| :-------------------- | :----------------------------------------------------------------------- |
-| 🌐 **在线体验**       | [gisfy.vercel.app](https://gisfy.vercel.app)                             |
-| 📂 **GitHub 仓库**    | [github.com/your-username/gisfy](https://github.com/your-username/gisfy) |
-| 🎬 **B站演示视频**    | [bilibili.com/video/XXXXX](https://bilibili.com/video/XXXXX)             |
-| 📋 **产品需求文档**   | [docs/GisFy_PRD.md](docs/GisFy_PRD.md)                                   |
-| 📐 **技术设计文档**   | [docs/GisFy_TDD.md](docs/GisFy_TDD.md)                                   |
-| 📮 **API 接口文档**   | [docs/GisFy_API.md](docs/GisFy_API.md)                                   |
-| 🎨 **设计风格文档**   | [docs/GisFy_Design.md](docs/GisFy_Design.md)                             |
-| 🏆 **黑客松答辩文档** | [docs/GisFy_Hackathon_Pitch.md](docs/GisFy_Hackathon_Pitch.md)           |
-| ✨ **功能介绍文档**   | [docs/GisFy_Features.md](docs/GisFy_Features.md)                         |
+| 链接                  | 地址                                                                                                                |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| 🌐 **在线体验**       | [gisfy.vercel.app](https://gisfy.vercel.app)                                                                        |
+| 📂 **GitHub 仓库**    | [github.com/your-username/gisfy](https://github.com/your-username/gisfy)                                            |
+| 🎬 **B站演示视频**    | [bilibili.com/video/XXXXX](https://www.bilibili.com/video/BV133Go6LE5u/?vd_source=5da587cf9716888499951dd0c8cc205d) |
+| 📋 **产品需求文档**   | [docs/GisFy_PRD.md](docs/GisFy_PRD.md)                                                                              |
+| 📐 **技术设计文档**   | [docs/GisFy_TDD.md](docs/GisFy_TDD.md)                                                                              |
+| 📮 **API 接口文档**   | [docs/GisFy_API.md](docs/GisFy_API.md)                                                                              |
+| 🎨 **设计风格文档**   | [docs/GisFy_Design.md](docs/GisFy_Design.md)                                                                        |
+| 🏆 **黑客松答辩文档** | [docs/GisFy_Hackathon_Pitch.md](docs/GisFy_Hackathon_Pitch.md)                                                      |
+| ✨ **功能介绍文档**   | [docs/GisFy_Features.md](docs/GisFy_Features.md)                                                                    |
 
 ---
 

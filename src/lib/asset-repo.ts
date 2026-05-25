@@ -68,7 +68,11 @@ export async function upsertAssets(userId: string, assets: Asset[]) {
 
   const { error } = await db.from(TABLE).upsert(rows, { onConflict: "id" });
   if (error) {
+    console.error("[asset-repo] upsert error:", error.message, error.code);
     upsertAssetsMem(userId, assets);
+    console.log("[asset-repo] upsertMem fallback, count:", assets.length);
+  } else {
+    console.log("[asset-repo] upsert DB success, count:", assets.length);
   }
 }
 
@@ -83,7 +87,10 @@ export async function listAssets(userId: string): Promise<Asset[]> {
     )
     .eq("user_id", userId);
 
-  if (error || !data) return listAssetsMem(userId);
+  if (error || !data) {
+    console.error("[asset-repo] list error:", error?.message, error?.code);
+    return listAssetsMem(userId);
+  }
   return (data as DbAssetRow[]).map(toAsset);
 }
 
