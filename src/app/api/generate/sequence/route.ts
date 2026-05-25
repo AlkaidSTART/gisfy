@@ -1,15 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
-import {
-  generateSequenceRequestSchema,
-  type SequenceTaskInfo,
-} from "@/types";
+import { generateSequenceRequestSchema, type SequenceTaskInfo } from "@/types";
 import { fail, ok } from "@/lib/response";
-import { ANIMATION_TEMPLATES, DIRECTION_LABELS } from "@/lib/animation-templates";
+import {
+  ANIMATION_TEMPLATES,
+  DIRECTION_LABELS,
+} from "@/lib/animation-templates";
 import { generateWithAli } from "@/lib/ali";
 import { buildPrompt } from "@/lib/prompt-templates";
 import { startGenerationTask } from "@/lib/generation";
+
+const DASHSCOPE_MM_BASE =
+  "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
 async function buildVisualAnchorFromBaseFrame(
   prompt: string,
@@ -35,25 +36,35 @@ async function buildVisualAnchorFromBaseFrame(
     const base64 = first.images[0]?.base64;
     if (!base64) return "";
 
-    const aliyun = createOpenAI({
-      apiKey: process.env.ALI_API_KEY,
-      baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    });
-    const { text } = await generateText({
-      model: aliyun(process.env.VISION_MODEL || "qwen3-vl-flash"),
-      system:
-        "你是游戏角色一致性分析器。请提取角色可复用视觉锚点：发型、配色、服装结构、体型、武器/配件，60字内。",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "提取这张角色图的视觉锚点：" },
-            { type: "image", image: `data:image/png;base64,${base64}` },
+    const res = await fetch(DASHSCOPE_MM_BASE, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.ALI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.VISION_MODEL || "qwen-vl-max",
+        input: {
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  text: "提取这张角色图的视觉锚点：发型、配色、服装结构、体型、武器/配件，60字内。",
+                },
+                { image: `data:image/png;base64,${base64}` },
+              ],
+            },
           ],
         },
-      ],
+        parameters: { result_format: "message" },
+      }),
     });
-    return text.trim();
+    if (!res.ok) return "";
+    const data = await res.json();
+    return (
+      data?.output?.choices?.[0]?.message?.content?.[0]?.text?.trim() || ""
+    );
   } catch (error) {
     console.warn("[sequence] visual anchor fallback:", error);
     return "";
@@ -139,7 +150,8 @@ export async function POST(req: Request) {
       seed: sharedSeed,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "sequence 生成失败";
+    const message =
+      error instanceof Error ? error.message : "sequence 生成失败";
     return fail("sequence_failed", message, 500);
   }
 }

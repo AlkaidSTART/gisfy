@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Image as ImageIcon,
   Plus,
@@ -32,15 +33,18 @@ export default function HistoryBar({
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-24 bg-[#0EA5E9]/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
 
       <div className="flex items-center gap-5 overflow-x-auto pb-8 pt-2 scrollbar-hide snap-x px-2">
-        {/* Slot 0: Empty/CTA */}
-        <div className="snap-start shrink-0 w-32 h-32 rounded-4xl glass-panel bg-white/60 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#0EA5E9] hover:bg-white transition-all cursor-pointer group/card">
+        {/* Slot 0: New Canvas → opens fresh generate page */}
+        <Link
+          href="/generate"
+          className="snap-start shrink-0 w-32 h-32 rounded-4xl glass-panel bg-white/60 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#0EA5E9] hover:bg-white transition-all cursor-pointer group/card"
+        >
           <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover/card:scale-110 group-hover/card:bg-blue-50 transition-all">
             <Plus className="w-5 h-5 text-gray-300 group-hover/card:text-[#0EA5E9]" />
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest">
             New Canvas
           </span>
-        </div>
+        </Link>
 
         {/* History Slots */}
         {items.map((item) => (

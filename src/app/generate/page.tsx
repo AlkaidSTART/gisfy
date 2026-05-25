@@ -8,15 +8,7 @@ import PreviewCard from "@/components/workspace/preview-card";
 import SpritesheetBuilder from "@/components/workspace/spritesheet-builder";
 import AnimationBuilder from "@/components/workspace/animation-builder";
 import AssetsToolbar from "@/components/workspace/assets-toolbar";
-import {
-  LayoutGrid,
-  Zap,
-  Sparkles,
-  Box,
-  Info,
-  RotateCw,
-  Layers,
-} from "lucide-react";
+import { LayoutGrid, Zap, Sparkles, Box, RotateCw, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { saveAs } from "file-saver";
@@ -69,6 +61,7 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genStatus, setGenStatus] = useState<TaskStatus | "idle">("idle");
   const [genProgress, setGenProgress] = useState(0);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [config, setConfig] = useState({
     transparent: true,
     resolution: 256,
@@ -689,6 +682,8 @@ export default function GeneratePage() {
                     style={activeStyle}
                     seed={config.seed ? Number(config.seed) : undefined}
                     negativePrompt={config.negativePrompt}
+                    referenceImage={referenceImage}
+                    onReferenceImageChange={setReferenceImage}
                     onFrameGenerated={handleSequenceFrameGenerated}
                     onSequenceFinished={() => {
                       void loadAssets();
