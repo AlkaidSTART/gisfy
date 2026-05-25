@@ -8,6 +8,7 @@ interface ParamControlsProps {
   value: {
     transparent: boolean;
     resolution: number;
+    count: 1 | 4 | 9;
     enhancement: boolean;
     seed: string;
     lockSeed: boolean;
@@ -16,6 +17,7 @@ interface ParamControlsProps {
   onChange: (val: {
     transparent: boolean;
     resolution: number;
+    count: 1 | 4 | 9;
     enhancement: boolean;
     seed: string;
     lockSeed: boolean;
@@ -80,7 +82,7 @@ export default function ParamControls({ value, onChange }: ParamControlsProps) {
                   : "text-slate-400 hover:text-slate-600",
               )}
             >
-              保留背景 (JPG)
+              保留背景 (不透明 PNG)
             </button>
           </div>
         </div>
@@ -155,6 +157,38 @@ export default function ParamControls({ value, onChange }: ParamControlsProps) {
         </div>
 
         {/* Extra Params */}
+        <div className="space-y-3 pt-4 border-t border-border/40">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-bold text-gray-900">
+              单次生成数量
+            </label>
+            <span className="text-[10px] text-gray-400">1 / 4 / 9</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 4, 9].map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    count: c as 1 | 4 | 9,
+                  })
+                }
+                className={cn(
+                  "h-9 rounded-xl text-xs font-bold border transition-colors",
+                  value.count === c
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-600 border-border/50 hover:bg-gray-50",
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Enhancement */}
         <div
           className="flex items-center justify-between pt-4 border-t border-border/40 cursor-pointer"
           onClick={() =>

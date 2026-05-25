@@ -69,7 +69,8 @@ export default function GeneratePage() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [config, setConfig] = useState({
     transparent: true,
-    resolution: 256,
+    resolution: 512,
+    count: 1 as 1 | 4 | 9,
     enhancement: true,
     seed: "",
     lockSeed: false,
@@ -276,7 +277,7 @@ export default function GeneratePage() {
           style: activeStyle,
           type: "character",
           size: config.resolution,
-          count: 1,
+          count: config.count,
           transparent: config.transparent,
           seed: currentSeed,
           negativePrompt: config.negativePrompt.trim() || undefined,
@@ -297,6 +298,7 @@ export default function GeneratePage() {
     isGenerating,
     activeStyle,
     config.resolution,
+    config.count,
     config.transparent,
     config.seed,
     config.lockSeed,

@@ -16,10 +16,13 @@ function createSupabaseDb(): SupabaseClient {
   });
 }
 
-const supabaseDb: SupabaseClient = globalThis._supabaseDb ?? createSupabaseDb();
-
-if (process.env.NODE_ENV !== "production" && !globalThis._supabaseDb) {
-  globalThis._supabaseDb = supabaseDb;
+export function getSupabaseDb(): SupabaseClient {
+  if (globalThis._supabaseDb) return globalThis._supabaseDb;
+  const client = createSupabaseDb();
+  if (process.env.NODE_ENV !== "production") {
+    globalThis._supabaseDb = client;
+  }
+  return client;
 }
 
-export default supabaseDb;
+export default getSupabaseDb;

@@ -11,10 +11,9 @@ export const assetTypeSchema = z.enum([
   "effect",
 ]);
 export const assetSizeSchema = z.union([
-  z.literal(64),
-  z.literal(128),
-  z.literal(256),
   z.literal(512),
+  z.literal(1024),
+  z.literal(2048),
 ]);
 export const assetCountSchema = z.union([
   z.literal(1),
