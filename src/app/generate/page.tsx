@@ -162,6 +162,7 @@ export default function GeneratePage() {
                 prompt: first.prompt,
                 style: first.style,
               });
+              setReferenceImage(first.url);
             }
             stopPolling();
             setIsGenerating(false);

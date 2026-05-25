@@ -14,22 +14,32 @@ function buildFramePrompt(input: {
   basePrompt: string;
   actionPrompt: string;
   phase: string;
+  previousPhase?: string;
+  nextPhase?: string;
   frame: number;
   totalFrames: number;
   directionLabel: string;
 }) {
   return [
-    input.basePrompt,
-    input.actionPrompt,
+    `角色视觉锚点：${input.basePrompt}`,
+    `动作类型：${input.actionPrompt}`,
     `${input.directionLabel}朝向`,
-    `动画帧 ${input.frame}/${input.totalFrames}`,
+    `这是连续2D游戏动画的第 ${input.frame}/${input.totalFrames} 帧，只生成这一帧`,
     `当前帧姿态：${input.phase}`,
+    input.previousPhase ? `上一帧姿态参考：${input.previousPhase}` : "",
+    input.nextPhase ? `下一帧姿态参考：${input.nextPhase}` : "",
+    "请像传统2D角色动画师绘制关键帧一样处理：当前帧必须是上一帧到下一帧之间的自然过渡",
+    "使用onion-skin思维保持轮廓连续，头部、躯干、四肢和武器的位置变化要符合运动轨迹",
     "2D游戏角色spritesheet单帧，透明背景PNG，角色完整全身居中",
-    "所有帧必须使用相同画布尺寸、相同角色比例、相同镜头距离、相同脚底基线、相同角色中心锚点",
-    "只改变动作姿态，不改变服装、发型、脸型、配色、武器、装备、轮廓体型",
-    "动作需要与前后帧连续，可直接按帧序导入Unity/Godot/Phaser播放",
-    "不要生成多格漫画，不要把多个帧画在同一张图里",
-  ].join("，");
+    "所有帧必须保持同一画布尺寸、同一角色比例、同一镜头距离、同一脚底基线、同一角色中心锚点",
+    "除当前动作姿态外，发型、脸型、服装、武器、装备、配色、材质、轮廓体型必须完全一致",
+    "角色不要重新设计，不要改变年龄、性别、种族、发型长度、服装结构或武器形状",
+    "动作幅度清晰但不要瞬移，重心变化合理，四肢关节弯曲方向自然",
+    "输出必须可直接按帧序导入Unity/Godot/Phaser播放",
+    "不要生成多格漫画，不要把多个帧画在同一张图里，只输出单个角色单个姿态",
+  ]
+    .filter(Boolean)
+    .join("，");
 }
 
 function buildSequenceNegativePrompt(input?: string) {
@@ -95,6 +105,8 @@ export async function POST(req: Request) {
           basePrompt: body.prompt,
           actionPrompt,
           phase: template.phases[frame - 1] ?? actionPrompt,
+          previousPhase: template.phases[frame - 2],
+          nextPhase: template.phases[frame] ?? template.phases[0],
           frame,
           totalFrames: template.frames,
           directionLabel,

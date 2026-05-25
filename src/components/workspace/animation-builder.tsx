@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   ChevronRight,
@@ -93,6 +93,7 @@ export default function AnimationBuilder({
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const emittedTaskIdsRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const analyzedReferenceRef = useRef<string | null>(null);
 
   const effectivePrompt = visionPrompt || externalPrompt;
 
@@ -250,13 +251,12 @@ export default function AnimationBuilder({
 
   useEffect(() => stopPolling, []);
 
-  // ─── Image upload → Vision analysis ─────────────────────
-  const handleImageUpload = async (file: File) => {
+  const analyzeReferenceImage = useCallback(async (image: Blob) => {
     setVisionError(null);
     setIsAnalyzing(true);
 
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", image, "reference.png");
 
     try {
       const res = await fetch("/api/vision", {
@@ -268,7 +268,37 @@ export default function AnimationBuilder({
         throw new Error(json?.error?.message || "视觉识别失败");
       }
       setVisionPrompt(json.data.analysis);
-      // Convert file to base64 for reference display
+    } catch (error) {
+      setVisionError(error instanceof Error ? error.message : "视觉识别失败");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!referenceImage || analyzedReferenceRef.current === referenceImage) {
+      return;
+    }
+
+    analyzedReferenceRef.current = referenceImage;
+    void fetch(referenceImage)
+      .then((res) => {
+        if (!res.ok) throw new Error("参考图读取失败");
+        return res.blob();
+      })
+      .then((blob) => analyzeReferenceImage(blob))
+      .catch((error) => {
+        setVisionError(
+          error instanceof Error ? error.message : "参考图读取失败",
+        );
+      });
+  }, [analyzeReferenceImage, referenceImage]);
+
+  // ─── Image upload → Vision analysis ─────────────────────
+  const handleImageUpload = async (file: File) => {
+    analyzedReferenceRef.current = null;
+    try {
+      await analyzeReferenceImage(file);
       const reader = new FileReader();
       reader.onload = () => {
         onReferenceImageChange?.(reader.result as string);
@@ -276,12 +306,11 @@ export default function AnimationBuilder({
       reader.readAsDataURL(file);
     } catch (error) {
       setVisionError(error instanceof Error ? error.message : "视觉识别失败");
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
   const handleRemoveReference = () => {
+    analyzedReferenceRef.current = null;
     setVisionPrompt(null);
     setVisionError(null);
     onReferenceImageChange?.(null);
