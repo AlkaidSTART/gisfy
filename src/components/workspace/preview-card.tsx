@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import Image from "next/image";
 
 gsap.registerPlugin(useGSAP);
 
@@ -344,11 +343,10 @@ export default function PreviewCard({
             <div className="absolute -inset-4 bg-linear-to-r from-[#0EA5E9]/10 via-purple-500/10 to-pink-500/10 blur-2xl rounded-3xl" />
             <div className="relative w-full h-full rounded-3xl overflow-hidden border border-white/50 shadow-2xl">
               {lastResult.url ? (
-                <Image
+                <img
                   src={lastResult.url}
                   alt={lastResult.prompt}
-                  fill
-                  className="object-contain bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIEwgMjAgMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIxIiAvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz48L3N2Zz4=')]"
+                  className="w-full h-full object-contain bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIEwgMjAgMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIxIiAvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz48L3N2Zz4=')]"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-50">

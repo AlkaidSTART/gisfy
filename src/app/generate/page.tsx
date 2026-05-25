@@ -76,6 +76,11 @@ export default function GeneratePage() {
     frameCount: number;
     sheetSize: { w: number; h: number };
   } | null>(null);
+  const [latestPreview, setLatestPreview] = useState<{
+    url: string;
+    prompt: string;
+    style: "pixel" | "flat" | "anime";
+  } | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockedSeedRef = useRef<number | undefined>(undefined);
 
@@ -142,6 +147,14 @@ export default function GeneratePage() {
           setGenProgress(progress);
 
           if (status === "completed" && images?.length) {
+            const first = images[0];
+            if (first?.url) {
+              setLatestPreview({
+                url: first.url,
+                prompt: first.prompt,
+                style: first.style,
+              });
+            }
             stopPolling();
             setIsGenerating(false);
             await loadAssets();
@@ -384,7 +397,15 @@ export default function GeneratePage() {
     { scope: container },
   );
 
-  const lastResult = history[0];
+  const lastResult =
+    latestPreview ??
+    (history[0]
+      ? {
+          url: history[0].url,
+          prompt: history[0].prompt,
+          style: history[0].style,
+        }
+      : undefined);
 
   return (
     <div
