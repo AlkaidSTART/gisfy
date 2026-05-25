@@ -7,7 +7,7 @@ type QueueTaskPayload = {
     prompt: string;
     style: "pixel" | "flat" | "anime";
     type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
-    size: 64 | 128 | 256 | 512;
+    size: 512 | 1024 | 2048;
     count: 1 | 4 | 9;
     transparent?: boolean;
     seed?: number;

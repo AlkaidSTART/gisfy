@@ -35,7 +35,7 @@ describe("API connectivity", () => {
         prompt: "测试角色",
         style: "pixel",
         type: "character",
-        size: 256,
+        size: 512,
         count: 1,
       }),
     });

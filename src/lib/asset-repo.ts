@@ -29,7 +29,7 @@ function toAsset(row: DbAssetRow): Asset {
     prompt: row.prompt,
     style: row.style,
     type: row.type,
-    size: row.size as 64 | 128 | 256 | 512,
+    size: row.size as 512 | 1024 | 2048,
     seed: row.seed ?? undefined,
     cost: row.cost,
     duration: row.duration,
@@ -42,7 +42,7 @@ async function getSupabaseDb() {
     return null;
   }
   const mod = await import("@/lib/supabase-db");
-  return mod.default;
+  return mod.getSupabaseDb();
 }
 
 export async function upsertAssets(userId: string, assets: Asset[]) {
