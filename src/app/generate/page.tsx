@@ -53,8 +53,13 @@ type FilterDate = "today" | "week" | "all";
 
 export default function GeneratePage() {
   const container = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
-  const userId = user?.id ?? "default";
+  const { user, loading } = useAuth();
+  const [persistedUserId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const localUserId = window.localStorage.getItem("gisfy_userid");
+    return localUserId?.trim() ? localUserId : null;
+  });
+  const userId = persistedUserId ?? user?.id ?? "default";
 
   const [activeTab, setActiveTab] = useState<"assets" | "animation">("assets");
   const [activeStyle, setActiveStyle] = useState<"pixel" | "flat" | "anime">(
@@ -419,10 +424,11 @@ export default function GeneratePage() {
   }, [stopPolling]);
 
   useEffect(() => {
+    if (loading) return;
     queueMicrotask(() => {
       void loadAssets();
     });
-  }, [loadAssets]);
+  }, [loadAssets, loading]);
 
   useGSAP(
     () => {
@@ -684,6 +690,9 @@ export default function GeneratePage() {
                     seed={config.seed ? Number(config.seed) : undefined}
                     negativePrompt={config.negativePrompt}
                     onFrameGenerated={handleSequenceFrameGenerated}
+                    onSequenceFinished={() => {
+                      void loadAssets();
+                    }}
                   />
                 </div>
               )}

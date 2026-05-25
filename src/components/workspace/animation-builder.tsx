@@ -27,6 +27,7 @@ interface AnimationBuilderProps {
     type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
     size: number;
   }) => void;
+  onSequenceFinished?: () => void;
 }
 
 type SequenceTask = {
@@ -50,6 +51,7 @@ export default function AnimationBuilder({
   negativePrompt,
   onSequenceCreated,
   onFrameGenerated,
+  onSequenceFinished,
 }: AnimationBuilderProps) {
   const [template, setTemplate] = useState<AnimationTemplate>("walk");
   const [direction, setDirection] = useState<2 | 4>(4);
@@ -158,11 +160,12 @@ export default function AnimationBuilder({
       if (allDone) {
         stopPolling();
         setIsGenerating(false);
+        onSequenceFinished?.();
       }
     }, 1200);
 
     return stopPolling;
-  }, [tasks, onFrameGenerated]);
+  }, [tasks, onFrameGenerated, onSequenceFinished]);
 
   useEffect(() => stopPolling, []);
 
