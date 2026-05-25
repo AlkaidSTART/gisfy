@@ -1,4 +1,4 @@
-import type { AssetType, Style } from "@/types";
+import type { AssetType, Style, GenerateRequest } from "@/types";
 
 const STYLE_PREFIX: Record<Style, string> = {
   pixel: "像素风格，16-bit 游戏画面，块状边缘，低分辨率，透明背景，",
@@ -16,12 +16,13 @@ const TYPE_TEMPLATES: Record<AssetType, string> = {
   effect: "{描述}，透明背景，游戏特效序列帧素材",
 };
 
-export function buildPrompt(input: {
-  prompt: string;
-  style: Style;
-  type: AssetType;
-  negativePrompt?: string;
-}) {
+export function buildPrompt(
+  input: Partial<GenerateRequest> & {
+    prompt: string;
+    style: Style;
+    type: AssetType;
+  },
+) {
   const styled = `${STYLE_PREFIX[input.style]}${TYPE_TEMPLATES[input.type].replace("{描述}", input.prompt)}`;
   return {
     prompt: styled,
