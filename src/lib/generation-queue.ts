@@ -68,9 +68,24 @@ async function loopOnce() {
     queueMicrotask(async () => {
       try {
         const mod = await import("@/lib/generation");
-        await withTaskLock(task.taskId, async () => {
+        const acquired = await withTaskLock(task.taskId, async () => {
           await mod.runGenerationTask(task.taskId, task.body, task.userId);
         });
+        if (!acquired) {
+          await redis.rpush(QUEUE_KEY, JSON.stringify(task));
+        }
+      } catch (error) {
+        console.error("[queue] worker error:", error);
+        try {
+          const mod = await import("@/lib/store/task-store");
+          await mod.updateTask(task.taskId, {
+            status: "failed",
+            progress: 0,
+            error: error instanceof Error ? error.message : "worker_error",
+          });
+        } catch {
+          // ignore
+        }
       } finally {
         activeWorkers = Math.max(0, activeWorkers - 1);
         void loopOnce();

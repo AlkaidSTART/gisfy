@@ -129,6 +129,8 @@ async function runGeneration(
     1_000,
     Number(process.env.GENERATE_TASK_TIMEOUT_MS ?? 120_000),
   );
+  const abort = new AbortController();
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
   try {
     await updateTask(task.taskId, { status: "processing", progress: 20 });
 
@@ -166,6 +168,7 @@ async function runGeneration(
               size: Math.max(body.size, 512),
               count: body.count,
               seed: body.seed,
+              signal: abort.signal,
             }),
           );
 
@@ -221,9 +224,12 @@ async function runGeneration(
           images: uploaded,
         });
       })(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("task_timeout")), timeoutMs),
-      ),
+      new Promise((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          abort.abort(new Error("task_timeout"));
+          reject(new Error("task_timeout"));
+        }, timeoutMs);
+      }),
     ]);
   } catch (error) {
     const message =
@@ -236,5 +242,8 @@ async function runGeneration(
       JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
     );
     await updateTask(task.taskId, { status: "failed", progress: 0, error: message });
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+    if (!abort.signal.aborted) abort.abort(new Error("done"));
   }
 }

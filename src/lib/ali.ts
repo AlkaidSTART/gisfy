@@ -16,8 +16,23 @@ interface DashScopeTaskResult {
   request_id: string;
 }
 
-async function urlToBase64(url: string): Promise<string> {
-  const res = await fetch(url);
+function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  outerSignal?: AbortSignal,
+) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(new Error("fetch_timeout")), timeoutMs);
+  if (outerSignal) {
+    if (outerSignal.aborted) controller.abort(outerSignal.reason);
+    else outerSignal.addEventListener("abort", () => controller.abort(outerSignal.reason), { once: true });
+  }
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(t));
+}
+
+async function urlToBase64(url: string, signal?: AbortSignal): Promise<string> {
+  const res = await fetchWithTimeout(url, {}, 30_000, signal);
   if (!res.ok) throw new Error(`Failed to download image: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   return buffer.toString("base64");
@@ -26,12 +41,26 @@ async function urlToBase64(url: string): Promise<string> {
 async function pollTask(
   taskId: string,
   apiKey: string,
+  signal?: AbortSignal,
 ): Promise<DashScopeTaskResult> {
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const res = await fetch(
+  const maxAttempts = Math.max(1, Number(process.env.ALI_POLL_MAX_ATTEMPTS ?? 45));
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise<void>((resolve, reject) => {
+      const t = setTimeout(resolve, 2000);
+      signal?.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(t);
+          reject(signal.reason ?? new Error("aborted"));
+        },
+        { once: true },
+      );
+    });
+    const res = await fetchWithTimeout(
       `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
       { headers: { Authorization: `Bearer ${apiKey}` } },
+      15_000,
+      signal,
     );
     if (!res.ok) {
       const text = await res.text();
@@ -45,7 +74,7 @@ async function pollTask(
       );
     }
   }
-  throw new Error("DashScope task timed out (120s)");
+  throw new Error(`DashScope task timed out (${maxAttempts * 2}s)`);
 }
 
 export async function generateWithAli(input: {
@@ -53,6 +82,7 @@ export async function generateWithAli(input: {
   size: number;
   count: number;
   seed?: number;
+  signal?: AbortSignal;
 }) {
   if (!process.env.ALI_API_KEY) {
     throw new Error("ALI_API_KEY is missing");
@@ -74,15 +104,20 @@ export async function generateWithAli(input: {
     (body.parameters as Record<string, unknown>).seed = input.seed;
   }
 
-  const res = await fetch(DASHSCOPE_BASE, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "X-DashScope-Async": "enable",
+  const res = await fetchWithTimeout(
+    DASHSCOPE_BASE,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "X-DashScope-Async": "enable",
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    15_000,
+    input.signal,
+  );
 
   if (!res.ok) {
     const text = await res.text();
@@ -97,17 +132,15 @@ export async function generateWithAli(input: {
     );
   }
 
-  // Poll until completed (DashScope requires async mode for this API key)
-  const data = await pollTask(initial.output.task_id, apiKey);
+  const data = await pollTask(initial.output.task_id, apiKey, input.signal);
 
   const results = data.output.results || [];
 
-  // Convert result URLs to base64
   const images = await Promise.all(
     results
       .filter((r) => r.url)
       .map(async (r) => ({
-        base64: await urlToBase64(r.url!),
+        base64: await urlToBase64(r.url!, input.signal),
       })),
   );
 
