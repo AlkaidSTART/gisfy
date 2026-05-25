@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     return fail("invalid_params", "缺少 taskId", 400);
   }
 
-  const task = getTask(taskId);
+  const task = await getTask(taskId);
   if (!task) {
     return fail("not_found", "任务不存在或已过期", 404);
   }
