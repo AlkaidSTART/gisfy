@@ -17,7 +17,6 @@ type QueueTaskPayload = {
 };
 
 const QUEUE_KEY = "gisfy:queue:generate";
-const INFLIGHT_KEY = "gisfy:queue:generate:inflight";
 const LOCK_PREFIX = "gisfy:queue:lock:";
 const LOCK_TTL_MS = 5 * 60 * 1000;
 const WORKER_CONCURRENCY = Math.max(
@@ -29,6 +28,7 @@ const ENABLED = Boolean(process.env.REDIS_URL);
 
 let workerStarted = false;
 let timer: ReturnType<typeof setInterval> | null = null;
+let activeWorkers = 0;
 
 export async function enqueueGenerationTask(payload: QueueTaskPayload) {
   if (!ENABLED) {
@@ -60,13 +60,12 @@ async function pullOneTask(): Promise<QueueTaskPayload | null> {
 }
 
 async function loopOnce() {
-  const inflight = Number((await redis.get(INFLIGHT_KEY)) || "0");
-  if (inflight >= WORKER_CONCURRENCY) return;
+  if (activeWorkers >= WORKER_CONCURRENCY) return;
 
   const task = await pullOneTask();
   if (!task) return;
 
-  await redis.incr(INFLIGHT_KEY);
+  activeWorkers += 1;
   queueMicrotask(async () => {
     try {
       const mod = await import("@/lib/generation");
@@ -74,7 +73,8 @@ async function loopOnce() {
         await mod.runGenerationTask(task.taskId, task.body, task.userId);
       });
     } finally {
-      await redis.decr(INFLIGHT_KEY);
+      activeWorkers = Math.max(0, activeWorkers - 1);
+      void loopOnce();
     }
   });
 }
@@ -82,6 +82,7 @@ async function loopOnce() {
 export function ensureGenerationWorker() {
   if (!ENABLED || workerStarted) return;
   workerStarted = true;
+  void loopOnce();
   timer = setInterval(() => {
     void loopOnce();
   }, QUEUE_POLL_MS);
