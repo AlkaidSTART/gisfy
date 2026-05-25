@@ -105,47 +105,51 @@ export default function GeneratePage() {
   const lockedSeedRef = useRef<number | undefined>(undefined);
 
   const loadAssets = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/assets?page=1&limit=20&sort=newest&userId=${encodeURIComponent(userId)}`,
-        { cache: "no-store" },
-      );
-      const json = await res.json();
-      if (!json?.success) {
-        setAssetsLoadError(json?.error?.message || "素材加载失败");
+    const url = `/api/assets?page=1&limit=20&sort=newest&userId=${encodeURIComponent(userId)}`;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        const json = await res.json();
+        if (!json?.success) {
+          setAssetsLoadError(json?.error?.message || "素材加载失败");
+          return;
+        }
+        const items: Asset[] = json.data.assets.map(
+          (a: {
+            id: string;
+            cdnUrl: string;
+            prompt: string;
+            style: "pixel" | "flat" | "anime";
+            type:
+              | "character"
+              | "monster"
+              | "scene"
+              | "tile"
+              | "item"
+              | "ui"
+              | "effect";
+            size: number;
+            createdAt: string;
+          }) => ({
+            id: a.id,
+            url: a.cdnUrl,
+            prompt: a.prompt,
+            style: a.style,
+            type: a.type,
+            size: a.size,
+            timestamp: a.createdAt,
+          }),
+        );
+        setHistory(items);
+        setAssetsLoadError(null);
         return;
+      } catch {
+        if (attempt === 1) {
+          setAssetsLoadError("素材加载失败，请稍后重试");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400));
       }
-      const items: Asset[] = json.data.assets.map(
-        (a: {
-          id: string;
-          cdnUrl: string;
-          prompt: string;
-          style: "pixel" | "flat" | "anime";
-          type:
-            | "character"
-            | "monster"
-            | "scene"
-            | "tile"
-            | "item"
-            | "ui"
-            | "effect";
-          size: number;
-          createdAt: string;
-        }) => ({
-          id: a.id,
-          url: a.cdnUrl,
-          prompt: a.prompt,
-          style: a.style,
-          type: a.type,
-          size: a.size,
-          timestamp: a.createdAt,
-        }),
-      );
-      setHistory(items);
-      setAssetsLoadError(null);
-    } catch (e) {
-      console.error(e);
-      setAssetsLoadError("素材加载失败，请稍后重试");
     }
   }, [userId]);
 
