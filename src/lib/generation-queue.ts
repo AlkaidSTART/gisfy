@@ -9,6 +9,7 @@ type QueueTaskPayload = {
     type: "character" | "monster" | "scene" | "tile" | "item" | "ui" | "effect";
     size: 64 | 128 | 256 | 512;
     count: 1 | 4 | 9;
+    transparent?: boolean;
     seed?: number;
     negativePrompt?: string;
     promptMode?: "template" | "raw";

@@ -22,6 +22,7 @@ function buildFramePrompt(input: {
   frame: number;
   totalFrames: number;
   directionLabel: string;
+  transparent: boolean;
 }) {
   return [
     `角色视觉锚点：${input.basePrompt}`,
@@ -33,7 +34,9 @@ function buildFramePrompt(input: {
     input.nextPhase ? `下一帧姿态参考：${input.nextPhase}` : "",
     "请像传统2D角色动画师绘制关键帧一样处理：当前帧必须是上一帧到下一帧之间的自然过渡",
     "使用onion-skin思维保持轮廓连续，头部、躯干、四肢和武器的位置变化要符合运动轨迹",
-    "2D游戏角色spritesheet单帧，透明背景PNG，角色完整全身居中",
+    input.transparent
+      ? "2D游戏角色spritesheet单帧，透明背景PNG，角色完整全身居中"
+      : "2D游戏角色spritesheet单帧，保留原图背景，不要抠图，角色完整全身居中",
     "所有帧必须保持同一画布尺寸、同一角色比例、同一镜头距离、同一脚底基线、同一角色中心锚点",
     "除当前动作姿态外，发型、脸型、服装、武器、装备、配色、材质、轮廓体型必须完全一致",
     "角色不要重新设计，不要改变年龄、性别、种族、发型长度、服装结构或武器形状",
@@ -111,6 +114,7 @@ export async function POST(req: Request) {
           frame,
           totalFrames: template.frames,
           directionLabel,
+          transparent: body.transparent,
         });
 
         const taskId = `task_${randomUUID().slice(0, 8)}`;
@@ -121,6 +125,7 @@ export async function POST(req: Request) {
             type: "character",
             size: body.size,
             count: 1,
+            transparent: body.transparent,
             seed: sharedSeed,
             negativePrompt: sequenceNegativePrompt,
             promptMode: "raw",
@@ -136,6 +141,7 @@ export async function POST(req: Request) {
             type: "character",
             size: body.size,
             count: 1,
+            transparent: body.transparent,
             seed: sharedSeed,
             negativePrompt: sequenceNegativePrompt,
             promptMode: "raw",

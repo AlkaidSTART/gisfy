@@ -1,9 +1,9 @@
 import type { AssetType, Style, GenerateRequest } from "@/types";
 
 const STYLE_PREFIX: Record<Style, string> = {
-  pixel: "像素风格，16-bit 游戏画面，块状边缘，低分辨率，透明背景，",
-  flat: "扁平矢量风格，纯色块，简洁线条，无渐变，透明背景，",
-  anime: "日系动漫风格，勾线清晰，柔和上色，大眼睛，透明背景，",
+  pixel: "像素风格，16-bit 游戏画面，块状边缘，低分辨率，",
+  flat: "扁平矢量风格，纯色块，简洁线条，无渐变，",
+  anime: "日系动漫风格，勾线清晰，柔和上色，大眼睛，",
 };
 
 const TYPE_TEMPLATES: Record<AssetType, string> = {
@@ -23,7 +23,11 @@ export function buildPrompt(
     type: AssetType;
   },
 ) {
-  const styled = `${STYLE_PREFIX[input.style]}${TYPE_TEMPLATES[input.type].replace("{描述}", input.prompt)}`;
+  const backgroundHint =
+    input.transparent === false
+      ? "保留原图背景，不要抠图，不要透明通道，"
+      : "透明背景，保留完整 alpha 通道，";
+  const styled = `${STYLE_PREFIX[input.style]}${backgroundHint}${TYPE_TEMPLATES[input.type].replace("{描述}", input.prompt)}`;
   return {
     prompt: styled,
     negativePrompt: input.negativePrompt ?? "",

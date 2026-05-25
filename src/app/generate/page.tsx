@@ -277,6 +277,7 @@ export default function GeneratePage() {
           type: "character",
           size: config.resolution,
           count: 1,
+          transparent: config.transparent,
           seed: currentSeed,
           negativePrompt: config.negativePrompt.trim() || undefined,
         }),
@@ -296,6 +297,7 @@ export default function GeneratePage() {
     isGenerating,
     activeStyle,
     config.resolution,
+    config.transparent,
     config.seed,
     config.lockSeed,
     config.negativePrompt,
@@ -814,6 +816,7 @@ export default function GeneratePage() {
                     userId={userId}
                     prompt={prompt}
                     style={activeStyle}
+                    transparent={config.transparent}
                     seed={
                       config.seed.trim() && /^-?\d+$/.test(config.seed.trim())
                         ? Number(config.seed.trim())

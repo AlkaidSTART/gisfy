@@ -21,6 +21,7 @@ import Image from "next/image";
 interface AnimationBuilderProps {
   prompt: string;
   style: Style;
+  transparent?: boolean;
   userId?: string;
   seed?: number;
   negativePrompt?: string;
@@ -73,6 +74,7 @@ const POLL_BATCH_SIZE = 4;
 export default function AnimationBuilder({
   prompt: externalPrompt,
   style,
+  transparent = true,
   userId,
   seed: externalSeed,
   negativePrompt: externalNegativePrompt,
@@ -371,6 +373,7 @@ export default function AnimationBuilder({
           prompt: effectivePrompt,
           style,
           size: 256,
+          transparent,
           template,
           direction,
           seed: externalSeed,

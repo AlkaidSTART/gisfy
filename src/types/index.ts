@@ -28,6 +28,7 @@ export const generateRequestSchema = z.object({
   type: assetTypeSchema,
   size: assetSizeSchema.default(256),
   count: assetCountSchema.default(1),
+  transparent: z.boolean().default(true),
   seed: z.number().int().optional(),
   negativePrompt: z.string().max(300).optional().default(""),
 });
@@ -107,6 +108,7 @@ export const generateSequenceRequestSchema = z.object({
   size: assetSizeSchema.default(256),
   template: animationTemplateSchema,
   direction: animationDirectionSchema.default(1),
+  transparent: z.boolean().default(true),
   seed: z.number().int().optional(),
   negativePrompt: z.string().max(300).optional().default(""),
 });
