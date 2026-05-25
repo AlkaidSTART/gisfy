@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { Layers, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Download,
+  Eye,
+  Grid3X3,
+  Layers,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import HistoryBar from "@/components/workspace/history-bar";
 
@@ -16,13 +25,21 @@ interface SpritesheetBuilderProps {
   items: AssetItem[];
   selectedIds: string[];
   onToggleSelect: (id: string) => void;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
+  onMoveSelected: (id: string, direction: -1 | 1) => void;
   format: "texturepacker-array" | "aseprite" | "phaser" | "strip" | "grid";
   onFormatChange: (format: "texturepacker-array" | "aseprite" | "phaser" | "strip" | "grid") => void;
+  columns?: number;
+  onColumnsChange: (columns?: number) => void;
+  padding: number;
+  onPaddingChange: (padding: number) => void;
   isBuilding: boolean;
   onBuild: () => void;
   result: {
     pngUrl: string;
     jsonUrl: string;
+    json?: unknown;
     frameCount: number;
     sheetSize: { w: number; h: number };
   } | null;
@@ -33,8 +50,15 @@ export default function SpritesheetBuilder({
   items,
   selectedIds,
   onToggleSelect,
+  onSelectAll,
+  onClearSelection,
+  onMoveSelected,
   format,
   onFormatChange,
+  columns,
+  onColumnsChange,
+  padding,
+  onPaddingChange,
   isBuilding,
   onBuild,
   result,
@@ -42,8 +66,16 @@ export default function SpritesheetBuilder({
 }: SpritesheetBuilderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selectedItems = useMemo(
-    () => items.filter((item) => selectedIds.includes(item.id)),
+    () =>
+      selectedIds
+        .map((id) => items.find((item) => item.id === id))
+        .filter((item): item is AssetItem => Boolean(item)),
     [items, selectedIds],
+  );
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const resultJson = useMemo(
+    () => (result?.json ? JSON.stringify(result.json, null, 2) : ""),
+    [result],
   );
 
   useEffect(() => {
@@ -54,7 +86,10 @@ export default function SpritesheetBuilder({
 
     const cell = 96;
     const padding = 12;
-    const cols = Math.max(1, Math.min(4, selectedItems.length || 1));
+    const cols = Math.max(
+      1,
+      Math.min(columns ?? 4, selectedItems.length || 1),
+    );
     const rows = Math.max(1, Math.ceil((selectedItems.length || 1) / cols));
     const width = cols * cell + (cols + 1) * padding;
     const height = rows * cell + (rows + 1) * padding;
@@ -160,7 +195,17 @@ export default function SpritesheetBuilder({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => selectedIds.forEach((id) => onToggleSelect(id))}
+              onClick={onSelectAll}
+              className="h-8 px-3 rounded-xl text-xs font-bold text-gray-500"
+            >
+              <Grid3X3 className="w-3.5 h-3.5" />
+              全选
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClearSelection}
               className="h-8 px-3 rounded-xl text-xs font-bold text-gray-500"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -171,6 +216,53 @@ export default function SpritesheetBuilder({
             </span>
           </div>
         </div>
+
+        {selectedItems.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {selectedItems.map((item, index) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-border/50 bg-white p-2 flex items-center gap-2"
+              >
+                <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
+                  <img
+                    src={item.url}
+                    alt={item.prompt}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold text-gray-700 truncate">
+                    {String(index + 1).padStart(2, "0")} · {item.id.slice(0, 8)}
+                  </p>
+                  <p className="text-[9px] text-gray-400 truncate">
+                    {item.prompt}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onMoveSelected(item.id, -1)}
+                    disabled={index === 0}
+                    className="w-6 h-5 rounded-md border border-border/50 text-gray-500 disabled:opacity-30 flex items-center justify-center"
+                    title="前移"
+                  >
+                    <ArrowUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMoveSelected(item.id, 1)}
+                    disabled={index === selectedItems.length - 1}
+                    className="w-6 h-5 rounded-md border border-border/50 text-gray-500 disabled:opacity-30 flex items-center justify-center"
+                    title="后移"
+                  >
+                    <ArrowDown className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="w-full overflow-x-auto">
           <canvas
@@ -200,6 +292,37 @@ export default function SpritesheetBuilder({
             <option value="strip">strip</option>
             <option value="grid">grid</option>
           </select>
+          <label className="h-9 rounded-xl border border-border/50 bg-white px-3 text-xs font-medium flex items-center gap-2">
+            列
+            <input
+              type="number"
+              min={1}
+              max={16}
+              value={columns ?? ""}
+              placeholder="auto"
+              onChange={(e) =>
+                onColumnsChange(
+                  e.target.value ? Number(e.target.value) : undefined,
+                )
+              }
+              className="w-14 outline-none bg-transparent text-xs"
+            />
+          </label>
+          <label className="h-9 rounded-xl border border-border/50 bg-white px-3 text-xs font-medium flex items-center gap-2">
+            间距
+            <input
+              type="number"
+              min={0}
+              max={8}
+              value={padding}
+              onChange={(e) =>
+                onPaddingChange(
+                  Math.min(8, Math.max(0, Number(e.target.value) || 0)),
+                )
+              }
+              className="w-10 outline-none bg-transparent text-xs"
+            />
+          </label>
           <Button
             type="button"
             onClick={onBuild}
@@ -223,30 +346,46 @@ export default function SpritesheetBuilder({
               </span>
               <a
                 href={result.pngUrl}
+                download="spritesheet.png"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] font-bold text-[#0EA5E9] hover:underline"
+                className="text-[11px] font-bold text-[#0EA5E9] hover:underline inline-flex items-center gap-1"
               >
+                <Eye className="w-3 h-3" />
                 PNG
               </a>
               <a
                 href={result.jsonUrl}
+                download="spritesheet.json"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] font-bold text-[#0EA5E9] hover:underline"
+                className="text-[11px] font-bold text-[#0EA5E9] hover:underline inline-flex items-center gap-1"
               >
+                <Eye className="w-3 h-3" />
                 JSON
               </a>
               <button
                 type="button"
                 onClick={onExportZip}
-                className="text-[11px] font-bold text-[#0EA5E9] hover:underline"
+                className="text-[11px] font-bold text-[#0EA5E9] hover:underline inline-flex items-center gap-1"
               >
+                <Download className="w-3 h-3" />
                 导出 ZIP
               </button>
             </>
           )}
         </div>
+
+        {resultJson && (
+          <details className="rounded-xl border border-border/50 bg-slate-950 text-slate-100 overflow-hidden">
+            <summary className="cursor-pointer px-3 py-2 text-[11px] font-bold text-slate-200">
+              预览 spritesheet.json
+            </summary>
+            <pre className="max-h-64 overflow-auto p-3 text-[10px] leading-relaxed">
+              {resultJson}
+            </pre>
+          </details>
+        )}
       </div>
 
       <div className="mt-4">
