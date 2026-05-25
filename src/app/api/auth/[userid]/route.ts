@@ -1,4 +1,4 @@
-import supabaseDb from "@/lib/supabase-db";
+import { getSupabaseDb } from "@/lib/supabase-db";
 import { ok, fail } from "@/lib/response";
 
 export async function GET(
@@ -8,6 +8,7 @@ export async function GET(
   try {
     const { userid } = await params;
     if (!userid?.trim()) return fail("invalid_params", "缺少 userid", 400);
+    const supabaseDb = getSupabaseDb();
 
     let { data: user } = await supabaseDb
       .from("users")

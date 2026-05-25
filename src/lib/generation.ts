@@ -63,7 +63,7 @@ export interface StartTaskInput {
   prompt: string;
   style: Style;
   type: AssetType;
-  size: 64 | 128 | 256 | 512;
+  size: 512 | 1024 | 2048;
   count: 1 | 4 | 9;
   transparent?: boolean;
   seed?: number;
@@ -208,7 +208,7 @@ async function runGeneration(
           prompt: img.prompt,
           style: img.style,
           type: img.type,
-          size: img.size as 64 | 128 | 256 | 512,
+          size: img.size as 512 | 1024 | 2048,
           cost: 0,
           duration: (Date.now() - startedAt) / 1000,
           createdAt: new Date().toISOString(),

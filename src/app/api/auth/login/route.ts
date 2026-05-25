@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import supabaseDb from "@/lib/supabase-db";
+import { getSupabaseDb } from "@/lib/supabase-db";
 import { createSession, setSessionCookie } from "@/lib/auth";
 import { ok, fail } from "@/lib/response";
 
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
 
     const { email, password } = parsed.data;
     console.log("[login] attempt:", email);
+    const supabaseDb = getSupabaseDb();
 
     const { data: user, error: dbError } = await supabaseDb
       .from("users")

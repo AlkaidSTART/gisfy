@@ -255,8 +255,12 @@ export default function AnimationBuilder({
         });
       }
 
+      const mergedProgress = { ...taskProgress };
+      for (const [taskId, p] of updates) {
+        mergedProgress[taskId] = p;
+      }
       const allDone = tasks.every((task) => {
-        const state = taskProgress[task.taskId];
+        const state = mergedProgress[task.taskId];
         return state?.status === "completed" || state?.status === "failed";
       });
       if (
@@ -372,7 +376,7 @@ export default function AnimationBuilder({
           userId,
           prompt: effectivePrompt,
           style,
-          size: 256,
+          size: 512,
           transparent,
           template,
           direction,

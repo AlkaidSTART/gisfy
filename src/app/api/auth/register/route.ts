@@ -1,6 +1,6 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import supabaseDb from "@/lib/supabase-db";
+import { getSupabaseDb } from "@/lib/supabase-db";
 import { createSession, setSessionCookie } from "@/lib/auth";
 import { ok, fail } from "@/lib/response";
 
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
       return fail("VALIDATION", "邮箱/用户名/密码格式不正确");
 
     const { email, name, password } = parsed.data;
+    const supabaseDb = getSupabaseDb();
 
     const { data: exists } = await supabaseDb
       .from("users")
