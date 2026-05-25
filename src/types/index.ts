@@ -95,14 +95,18 @@ export const animationTemplateSchema = z.enum([
   "death",
 ]);
 
-export const animationDirectionSchema = z.union([z.literal(2), z.literal(4)]);
+export const animationDirectionSchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(4),
+]);
 
 export const generateSequenceRequestSchema = z.object({
   prompt: z.string().min(1).max(300),
   style: styleSchema,
   size: assetSizeSchema.default(256),
   template: animationTemplateSchema,
-  direction: animationDirectionSchema.default(2),
+  direction: animationDirectionSchema.default(1),
   seed: z.number().int().optional(),
   negativePrompt: z.string().max(300).optional().default(""),
 });

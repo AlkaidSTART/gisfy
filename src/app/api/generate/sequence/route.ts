@@ -5,71 +5,7 @@ import {
   ANIMATION_TEMPLATES,
   DIRECTION_LABELS,
 } from "@/lib/animation-templates";
-import { generateWithAli } from "@/lib/ali";
-import { buildPrompt } from "@/lib/prompt-templates";
 import { startGenerationTask } from "@/lib/generation";
-
-const DASHSCOPE_MM_BASE =
-  "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
-
-async function buildVisualAnchorFromBaseFrame(
-  prompt: string,
-  style: "pixel" | "flat" | "anime",
-  size: 64 | 128 | 256 | 512,
-  seed: number,
-) {
-  if (!process.env.ALI_API_KEY) return "";
-  try {
-    const basePrompt = buildPrompt({
-      prompt,
-      style,
-      type: "character",
-      size,
-      count: 1,
-    }).prompt;
-    const first = await generateWithAli({
-      prompt: basePrompt,
-      size: Math.max(size, 512),
-      count: 1,
-      seed,
-    });
-    const base64 = first.images[0]?.base64;
-    if (!base64) return "";
-
-    const res = await fetch(DASHSCOPE_MM_BASE, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.ALI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.VISION_MODEL || "qwen-vl-max",
-        input: {
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  text: "提取这张角色图的视觉锚点：发型、配色、服装结构、体型、武器/配件，60字内。",
-                },
-                { image: `data:image/png;base64,${base64}` },
-              ],
-            },
-          ],
-        },
-        parameters: { result_format: "message" },
-      }),
-    });
-    if (!res.ok) return "";
-    const data = await res.json();
-    return (
-      data?.output?.choices?.[0]?.message?.content?.[0]?.text?.trim() || ""
-    );
-  } catch (error) {
-    console.warn("[sequence] visual anchor fallback:", error);
-    return "";
-  }
-}
 
 export async function POST(req: Request) {
   try {
@@ -86,21 +22,12 @@ export async function POST(req: Request) {
     const body = parsed.data;
     const template = ANIMATION_TEMPLATES[body.template];
     const directionCount = body.direction ?? template.direction;
-    const directions = DIRECTION_LABELS[directionCount as 2 | 4];
+    const directions = DIRECTION_LABELS[directionCount as 1 | 2 | 4];
     const sequenceId = `seq_${randomUUID().slice(0, 8)}`;
     const userId = (json as { userId?: string }).userId || "default";
     const sharedSeed = body.seed ?? Math.floor(Math.random() * 2_147_483_647);
     const identityAnchor =
       "同一角色设定：角色外观、发型、服饰、配色、体型保持完全一致；仅动作和朝向变化。";
-    const anchorFramePrompt = template.prompt
-      .replace("{角色描述}", body.prompt)
-      .replace("{frame}", "1");
-    const visualAnchor = await buildVisualAnchorFromBaseFrame(
-      anchorFramePrompt,
-      body.style,
-      body.size,
-      sharedSeed,
-    );
 
     const tasks: SequenceTaskInfo[] = [];
 
@@ -114,7 +41,6 @@ export async function POST(req: Request) {
           framePrompt,
           `${directionLabel}朝向`,
           identityAnchor,
-          visualAnchor ? `视觉锚点：${visualAnchor}` : "",
           "固定seed与负面提示词保持一致。",
         ]
           .filter(Boolean)

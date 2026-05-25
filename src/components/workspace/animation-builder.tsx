@@ -78,7 +78,7 @@ export default function AnimationBuilder({
   onSequenceFinished,
 }: AnimationBuilderProps) {
   const [template, setTemplate] = useState<AnimationTemplate>("walk");
-  const [direction, setDirection] = useState<2 | 4>(4);
+  const [direction, setDirection] = useState<1 | 2 | 4>(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [tasks, setTasks] = useState<SequenceTask[]>([]);
@@ -272,6 +272,11 @@ export default function AnimationBuilder({
     onReferenceImageChange?.(null);
   };
 
+  const handleSelectTemplate = (nextTemplate: AnimationTemplate) => {
+    setTemplate(nextTemplate);
+    setDirection(ANIMATION_TEMPLATES[nextTemplate].direction);
+  };
+
   // ─── Sequence generation ────────────────────────────────
   const handleCreateSequence = async () => {
     if (!effectivePrompt || isGenerating) return;
@@ -422,7 +427,7 @@ export default function AnimationBuilder({
               <button
                 key={key}
                 type="button"
-                onClick={() => setTemplate(key)}
+                onClick={() => handleSelectTemplate(key)}
                 className={`rounded-2xl border p-3 text-left transition-all ${
                   active
                     ? "bg-black text-white border-black shadow-lg"
@@ -446,11 +451,11 @@ export default function AnimationBuilder({
 
       {/* ─── Direction Selector ─────────────────────────── */}
       <div className="flex items-center gap-2">
-        {[2, 4].map((count) => (
+        {[1, 2, 4].map((count) => (
           <button
             key={count}
             type="button"
-            onClick={() => setDirection(count as 2 | 4)}
+            onClick={() => setDirection(count as 1 | 2 | 4)}
             className={`h-9 px-4 rounded-xl text-xs font-bold border ${
               direction === count
                 ? "bg-[#0EA5E9] text-white border-[#0EA5E9]"

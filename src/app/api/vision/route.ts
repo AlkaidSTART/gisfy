@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.VISION_MODEL || "qwen-vl-max",
+        model: process.env.VISION_MODEL || "qwen3-vl-flash",
         input: {
           messages: [
             {
