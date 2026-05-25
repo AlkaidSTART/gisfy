@@ -71,7 +71,7 @@ export interface StartTaskInput {
   promptMode?: "template" | "raw";
 }
 
-export function createGenerationTask(
+export async function createGenerationTask(
   input: StartTaskInput,
   taskId = `task_${randomUUID().slice(0, 8)}`,
 ) {
@@ -85,7 +85,7 @@ export function createGenerationTask(
     createdAt: new Date().toISOString(),
   };
 
-  createTask(task);
+  await createTask(task);
   return taskId;
 }
 
@@ -93,7 +93,7 @@ export async function startGenerationTask(
   input: StartTaskInput,
   userId = "default",
 ) {
-  const taskId = createGenerationTask(input);
+  const taskId = await createGenerationTask(input);
   await enqueueGenerationTask({ taskId, userId, body: input });
   ensureGenerationWorker();
 

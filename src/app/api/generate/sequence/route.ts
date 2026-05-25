@@ -118,7 +118,7 @@ export async function POST(req: Request) {
         });
 
         const taskId = `task_${randomUUID().slice(0, 8)}`;
-        createGenerationTask(
+        await createGenerationTask(
           {
             prompt: enrichedPrompt,
             style: body.style,

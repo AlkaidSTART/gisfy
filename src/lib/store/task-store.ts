@@ -35,21 +35,19 @@ async function readTaskFromRedis(taskId: string): Promise<GenerateTask | undefin
   }
 }
 
-export function createTask(task: GenerateTask) {
+export async function createTask(task: GenerateTask) {
   tasks.set(task.taskId, task);
-  void persistTask(task);
+  await persistTask(task);
 }
 
-export function upsertTask(task: GenerateTask) {
+export async function upsertTask(task: GenerateTask) {
   tasks.set(task.taskId, task);
-  void persistTask(task);
+  await persistTask(task);
 }
 
 export async function getTask(taskId: string): Promise<GenerateTask | undefined> {
-  const local = tasks.get(taskId);
-  if (local) return local;
   const parsed = await readTaskFromRedis(taskId);
-  if (!parsed) return undefined;
+  if (!parsed) return tasks.get(taskId);
   tasks.set(taskId, parsed);
   return parsed;
 }
@@ -59,7 +57,7 @@ export async function updateTask(
   update: Partial<GenerateTask>,
 ): Promise<boolean> {
   const local = tasks.get(taskId);
-  const base = local ?? (await readTaskFromRedis(taskId));
+  const base = (await readTaskFromRedis(taskId)) ?? local;
   if (!base) return false;
 
   const merged = { ...base, ...update };
