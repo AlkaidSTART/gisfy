@@ -5,6 +5,7 @@ import {
 } from "@/types";
 import { fail, ok } from "@/lib/response";
 import { ANIMATION_TEMPLATES, DIRECTION_LABELS } from "@/lib/animation-templates";
+import { startGenerationTask } from "@/lib/generation";
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +24,12 @@ export async function POST(req: Request) {
     const directionCount = body.direction ?? template.direction;
     const directions = DIRECTION_LABELS[directionCount as 2 | 4];
     const sequenceId = `seq_${randomUUID().slice(0, 8)}`;
+    const userId = (json as { userId?: string }).userId || "default";
+    const baseSeed = body.seed ?? Math.floor(Math.random() * 2_147_483_647);
+    const identityAnchor = `同一角色设定：角色外观、发型、服饰、配色、体型保持完全一致；仅动作和朝向变化。`;
+
     const tasks: SequenceTaskInfo[] = [];
+    let index = 0;
 
     for (let direction = 0; direction < directionCount; direction += 1) {
       for (let frame = 1; frame <= template.frames; frame += 1) {
@@ -31,19 +37,36 @@ export async function POST(req: Request) {
         const framePrompt = template.prompt
           .replace("{角色描述}", body.prompt)
           .replace("{frame}", String(frame));
+        const enrichedPrompt = `${framePrompt}，${identityAnchor}`;
+        const taskId = startGenerationTask(
+          {
+            prompt: enrichedPrompt,
+            style: body.style,
+            type: "character",
+            size: body.size,
+            count: 1,
+            seed: baseSeed + index,
+            negativePrompt: body.negativePrompt,
+          },
+          userId,
+        );
+
         tasks.push({
-          taskId: `task_${randomUUID().slice(0, 8)}`,
+          taskId,
           frame,
           direction: direction + 1,
           directionLabel,
-          prompt: framePrompt,
+          prompt: enrichedPrompt,
         });
+        index += 1;
       }
     }
 
     return ok({
       sequenceId,
       tasks,
+      total: tasks.length,
+      baseSeed,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "sequence 生成失败";
