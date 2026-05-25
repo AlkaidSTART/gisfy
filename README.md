@@ -18,7 +18,7 @@
 
 | 链接                  | 地址                                                                                                                |
 | :-------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| 🌐 **在线体验**       | [gisfy.vercel.app](https://gisfy.vercel.app)                                                                        |
+| 🌐 **在线体验**       | [gisfy.vercel.app](https://gisfy.alkaid.live/)                                                                      |
 | 📂 **GitHub 仓库**    | [github.com/your-username/gisfy](https://github.com/your-username/gisfy)                                            |
 | 🎬 **B站演示视频**    | [bilibili.com/video/XXXXX](https://www.bilibili.com/video/BV133Go6LE5u/?vd_source=5da587cf9716888499951dd0c8cc205d) |
 | 📋 **产品需求文档**   | [docs/GisFy_PRD.md](docs/GisFy_PRD.md)                                                                              |
