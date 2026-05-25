@@ -94,7 +94,16 @@ export async function startGenerationTask(
   userId = "default",
 ) {
   const taskId = await createGenerationTask(input);
-  await enqueueGenerationTask({ taskId, userId, body: input });
+  try {
+    await enqueueGenerationTask({ taskId, userId, body: input });
+  } catch (error) {
+    await updateTask(taskId, {
+      status: "failed",
+      progress: 0,
+      error: error instanceof Error ? error.message : "enqueue_failed",
+    });
+    throw error;
+  }
   ensureGenerationWorker();
 
   return taskId;

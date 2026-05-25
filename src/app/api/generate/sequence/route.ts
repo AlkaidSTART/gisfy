@@ -10,6 +10,7 @@ import {
   enqueueGenerationTask,
   ensureGenerationWorker,
 } from "@/lib/generation-queue";
+import { updateTask } from "@/lib/store/task-store";
 
 export const maxDuration = 300;
 
@@ -118,35 +119,28 @@ export async function POST(req: Request) {
         });
 
         const taskId = `task_${randomUUID().slice(0, 8)}`;
-        await createGenerationTask(
-          {
-            prompt: enrichedPrompt,
-            style: body.style,
-            type: "character",
-            size: body.size,
-            count: 1,
-            transparent: body.transparent,
-            seed: sharedSeed,
-            negativePrompt: sequenceNegativePrompt,
-            promptMode: "raw",
-          },
-          taskId,
-        );
-        await enqueueGenerationTask({
-          taskId,
-          userId,
-          body: {
-            prompt: enrichedPrompt,
-            style: body.style,
-            type: "character",
-            size: body.size,
-            count: 1,
-            transparent: body.transparent,
-            seed: sharedSeed,
-            negativePrompt: sequenceNegativePrompt,
-            promptMode: "raw",
-          },
-        });
+        const taskBody = {
+          prompt: enrichedPrompt,
+          style: body.style,
+          type: "character" as const,
+          size: body.size,
+          count: 1 as const,
+          transparent: body.transparent,
+          seed: sharedSeed,
+          negativePrompt: sequenceNegativePrompt,
+          promptMode: "raw" as const,
+        };
+        await createGenerationTask(taskBody, taskId);
+        try {
+          await enqueueGenerationTask({ taskId, userId, body: taskBody });
+        } catch (error) {
+          await updateTask(taskId, {
+            status: "failed",
+            progress: 0,
+            error: error instanceof Error ? error.message : "enqueue_failed",
+          });
+          throw error;
+        }
 
         tasks.push({
           taskId,
