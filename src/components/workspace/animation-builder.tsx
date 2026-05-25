@@ -57,6 +57,7 @@ type SequenceTask = {
 type SequenceProgress = {
   status: TaskStatus;
   progress: number;
+  error?: string;
 };
 
 type FrameImage = {
@@ -119,12 +120,16 @@ export default function AnimationBuilder({
     let totalProgress = 0;
     let done = 0;
     let failed = 0;
+    let firstError: string | undefined;
     for (const task of tasks) {
       const state = taskProgress[task.taskId];
       const p = state?.progress ?? 0;
       totalProgress += p;
       if (state?.status === "completed") done += 1;
-      if (state?.status === "failed") failed += 1;
+      if (state?.status === "failed") {
+        failed += 1;
+        firstError ??= state.error;
+      }
     }
     const progress = Math.round(totalProgress / tasks.length);
     const label =
@@ -134,7 +139,7 @@ export default function AnimationBuilder({
           ? `进行中（${failed} 失败）`
           : "生成中";
 
-    return { done, failed, total: tasks.length, progress, label };
+    return { done, failed, total: tasks.length, progress, label, firstError };
   }, [tasks, taskProgress]);
 
   useEffect(() => {
@@ -155,7 +160,11 @@ export default function AnimationBuilder({
             if (!res.ok || !json?.success) {
               return [
                 task.taskId,
-                { status: "failed", progress: 0 } as SequenceProgress,
+                {
+                  status: "failed",
+                  progress: 0,
+                  error: json?.error?.message || `状态查询失败 ${res.status}`,
+                } as SequenceProgress,
                 null,
                 task,
               ] as const;
@@ -168,6 +177,7 @@ export default function AnimationBuilder({
               {
                 status: json.data.status as TaskStatus,
                 progress: Number(json.data.progress) || 0,
+                error: json.data.error,
               } as SequenceProgress,
               firstImage,
               task,
@@ -175,7 +185,11 @@ export default function AnimationBuilder({
           } catch {
             return [
               task.taskId,
-              { status: "failed", progress: 0 } as SequenceProgress,
+              {
+                status: "failed",
+                progress: 0,
+                error: "状态查询网络错误",
+              } as SequenceProgress,
               null,
               task,
             ] as const;
@@ -541,8 +555,10 @@ export default function AnimationBuilder({
         <span className="text-[11px] text-gray-500">
           {sequenceError
             ? `失败：${sequenceError}`
-            : summary.total > 0
-              ? `${summary.total} 个任务已创建`
+            : summary.failed > 0
+              ? `${summary.failed} 个任务失败${summary.firstError ? `：${summary.firstError}` : ""}`
+              : summary.total > 0
+                ? `${summary.total} 个任务已创建`
               : visionPrompt
                 ? `将创建 ${plannedFrameCount} 张`
                 : effectivePrompt

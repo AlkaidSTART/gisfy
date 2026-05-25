@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { generateSequenceRequestSchema, type SequenceTaskInfo } from "@/types";
 import { fail, ok } from "@/lib/response";
 import {
   ANIMATION_TEMPLATES,
   DIRECTION_LABELS,
 } from "@/lib/animation-templates";
-import { startGenerationTask } from "@/lib/generation";
+import { createGenerationTask, runGenerationTask } from "@/lib/generation";
+
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +33,7 @@ export async function POST(req: Request) {
       "同一角色设定：角色外观、发型、服饰、配色、体型保持完全一致；仅动作和朝向变化。";
 
     const tasks: SequenceTaskInfo[] = [];
+    const queue: Array<{ taskId: string; prompt: string }> = [];
 
     for (let direction = 0; direction < directionCount; direction += 1) {
       for (let frame = 1; frame <= template.frames; frame += 1) {
@@ -46,7 +50,8 @@ export async function POST(req: Request) {
           .filter(Boolean)
           .join("，");
 
-        const taskId = startGenerationTask(
+        const taskId = `task_${randomUUID().slice(0, 8)}`;
+        createGenerationTask(
           {
             prompt: enrichedPrompt,
             style: body.style,
@@ -56,8 +61,9 @@ export async function POST(req: Request) {
             seed: sharedSeed,
             negativePrompt: body.negativePrompt,
           },
-          userId,
+          taskId,
         );
+        queue.push({ taskId, prompt: enrichedPrompt });
 
         tasks.push({
           taskId,
@@ -68,6 +74,24 @@ export async function POST(req: Request) {
         });
       }
     }
+
+    after(async () => {
+      for (const item of queue) {
+        await runGenerationTask(
+          item.taskId,
+          {
+            prompt: item.prompt,
+            style: body.style,
+            type: "character",
+            size: body.size,
+            count: 1,
+            seed: sharedSeed,
+            negativePrompt: body.negativePrompt,
+          },
+          userId,
+        );
+      }
+    });
 
     return ok({
       sequenceId,

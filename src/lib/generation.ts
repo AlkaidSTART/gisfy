@@ -10,7 +10,22 @@ function mockBase64Png() {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=";
 }
 
-interface StartTaskInput {
+async function retry<T>(fn: () => Promise<T>, attempts = 2): Promise<T> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+export interface StartTaskInput {
   prompt: string;
   style: Style;
   type: AssetType;
@@ -20,9 +35,10 @@ interface StartTaskInput {
   negativePrompt?: string;
 }
 
-export function startGenerationTask(input: StartTaskInput, userId = "default") {
-  const taskId = `task_${randomUUID().slice(0, 8)}`;
-
+export function createGenerationTask(
+  input: StartTaskInput,
+  taskId = `task_${randomUUID().slice(0, 8)}`,
+) {
   const task: GenerateTask = {
     taskId,
     status: "queued",
@@ -34,9 +50,43 @@ export function startGenerationTask(input: StartTaskInput, userId = "default") {
   };
 
   createTask(task);
+  return taskId;
+}
+
+export function startGenerationTask(input: StartTaskInput, userId = "default") {
+  const taskId = createGenerationTask(input);
+  const task: GenerateTask = {
+    taskId,
+    status: "queued",
+    progress: 0,
+    prompt: input.prompt,
+    style: input.style,
+    type: input.type,
+    createdAt: new Date().toISOString(),
+  };
   void runGeneration(task, input, userId);
 
   return taskId;
+}
+
+export async function runGenerationTask(
+  taskId: string,
+  body: StartTaskInput,
+  userId: string,
+) {
+  await runGeneration(
+    {
+      taskId,
+      status: "queued",
+      progress: 0,
+      prompt: body.prompt,
+      style: body.style,
+      type: body.type,
+      createdAt: new Date().toISOString(),
+    },
+    body,
+    userId,
+  );
 }
 
 async function runGeneration(
@@ -70,12 +120,14 @@ async function runGeneration(
       }));
       await new Promise((r) => setTimeout(r, 1200));
     } else {
-      const aiResult = await generateWithAli({
-        prompt: built.prompt,
-        size: Math.max(body.size, 512),
-        count: body.count,
-        seed: body.seed,
-      });
+      const aiResult = await retry(() =>
+        generateWithAli({
+          prompt: built.prompt,
+          size: Math.max(body.size, 512),
+          count: body.count,
+          seed: body.seed,
+        }),
+      );
 
       images = aiResult.images.map((img) => ({
         id: `gisfy_${randomUUID().slice(0, 8)}`,
