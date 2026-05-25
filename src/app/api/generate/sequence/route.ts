@@ -18,42 +18,46 @@ async function buildVisualAnchorFromBaseFrame(
   seed: number,
 ) {
   if (!process.env.ALI_API_KEY) return "";
+  try {
+    const basePrompt = buildPrompt({
+      prompt,
+      style,
+      type: "character",
+      size,
+      count: 1,
+    }).prompt;
+    const first = await generateWithAli({
+      prompt: basePrompt,
+      size: Math.max(size, 512),
+      count: 1,
+      seed,
+    });
+    const base64 = first.images[0]?.base64;
+    if (!base64) return "";
 
-  const basePrompt = buildPrompt({
-    prompt,
-    style,
-    type: "character",
-    size,
-    count: 1,
-  }).prompt;
-  const first = await generateWithAli({
-    prompt: basePrompt,
-    size: Math.max(size, 512),
-    count: 1,
-    seed,
-  });
-  const base64 = first.images[0]?.base64;
-  if (!base64) return "";
-
-  const aliyun = createOpenAI({
-    apiKey: process.env.ALI_API_KEY,
-    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-  });
-  const { text } = await generateText({
-    model: aliyun(process.env.VISION_MODEL || "qwen-vl-max"),
-    system:
-      "你是游戏角色一致性分析器。请提取角色可复用视觉锚点：发型、配色、服装结构、体型、武器/配件，60字内。",
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "提取这张角色图的视觉锚点：" },
-          { type: "image", image: `data:image/png;base64,${base64}` },
-        ],
-      },
-    ],
-  });
-  return text.trim();
+    const aliyun = createOpenAI({
+      apiKey: process.env.ALI_API_KEY,
+      baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    });
+    const { text } = await generateText({
+      model: aliyun(process.env.VISION_MODEL || "qwen3-vl-flash"),
+      system:
+        "你是游戏角色一致性分析器。请提取角色可复用视觉锚点：发型、配色、服装结构、体型、武器/配件，60字内。",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "提取这张角色图的视觉锚点：" },
+            { type: "image", image: `data:image/png;base64,${base64}` },
+          ],
+        },
+      ],
+    });
+    return text.trim();
+  } catch (error) {
+    console.warn("[sequence] visual anchor fallback:", error);
+    return "";
+  }
 }
 
 export async function POST(req: Request) {
