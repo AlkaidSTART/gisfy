@@ -100,6 +100,7 @@ export default function GeneratePage() {
     prompt: string;
     style: "pixel" | "flat" | "anime";
   } | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockedSeedRef = useRef<number | undefined>(undefined);
 
@@ -388,14 +389,14 @@ export default function GeneratePage() {
         return false;
       }
       if (filterDate === "today") {
-        return Date.now() - new Date(item.timestamp).getTime() <= 24 * 60 * 60 * 1000;
+        return nowTs - new Date(item.timestamp).getTime() <= 24 * 60 * 60 * 1000;
       }
       if (filterDate === "week") {
-        return Date.now() - new Date(item.timestamp).getTime() <= 7 * 24 * 60 * 60 * 1000;
+        return nowTs - new Date(item.timestamp).getTime() <= 7 * 24 * 60 * 60 * 1000;
       }
       return true;
     });
-  }, [history, filterStyle, filterType, filterSearch, filterDate]);
+  }, [history, filterStyle, filterType, filterSearch, filterDate, nowTs]);
 
   const handleSelectAllFiltered = useCallback(() => {
     setSelectedAssetIds(filteredHistory.map((item) => item.id));
@@ -525,6 +526,13 @@ export default function GeneratePage() {
   useEffect(() => {
     return stopPolling;
   }, [stopPolling]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTs(Date.now());
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
