@@ -10,6 +10,55 @@ import { createGenerationTask, runGenerationTask } from "@/lib/generation";
 
 export const maxDuration = 300;
 
+function buildFramePrompt(input: {
+  basePrompt: string;
+  actionPrompt: string;
+  phase: string;
+  frame: number;
+  totalFrames: number;
+  directionLabel: string;
+}) {
+  return [
+    input.basePrompt,
+    input.actionPrompt,
+    `${input.directionLabel}朝向`,
+    `动画帧 ${input.frame}/${input.totalFrames}`,
+    `当前帧姿态：${input.phase}`,
+    "2D游戏角色spritesheet单帧，透明背景PNG，角色完整全身居中",
+    "所有帧必须使用相同画布尺寸、相同角色比例、相同镜头距离、相同脚底基线、相同角色中心锚点",
+    "只改变动作姿态，不改变服装、发型、脸型、配色、武器、装备、轮廓体型",
+    "动作需要与前后帧连续，可直接按帧序导入Unity/Godot/Phaser播放",
+    "不要生成多格漫画，不要把多个帧画在同一张图里",
+  ].join("，");
+}
+
+function buildSequenceNegativePrompt(input?: string) {
+  return [
+    input,
+    "多角色",
+    "多个角色",
+    "多帧拼图",
+    "分镜漫画",
+    "文字",
+    "水印",
+    "边框",
+    "背景场景",
+    "阴影地面",
+    "裁切身体",
+    "缺手缺脚",
+    "角色比例变化",
+    "服装变化",
+    "发型变化",
+    "颜色变化",
+    "镜头远近变化",
+    "位置漂移",
+    "模糊",
+    "低质量",
+  ]
+    .filter(Boolean)
+    .join("，");
+}
+
 export async function POST(req: Request) {
   try {
     const json = await req.json();
@@ -29,8 +78,9 @@ export async function POST(req: Request) {
     const sequenceId = `seq_${randomUUID().slice(0, 8)}`;
     const userId = (json as { userId?: string }).userId || "default";
     const sharedSeed = body.seed ?? Math.floor(Math.random() * 2_147_483_647);
-    const identityAnchor =
-      "同一角色设定：角色外观、发型、服饰、配色、体型保持完全一致；仅动作和朝向变化。";
+    const sequenceNegativePrompt = buildSequenceNegativePrompt(
+      body.negativePrompt,
+    );
 
     const tasks: SequenceTaskInfo[] = [];
     const queue: Array<{ taskId: string; prompt: string }> = [];
@@ -38,17 +88,17 @@ export async function POST(req: Request) {
     for (let direction = 0; direction < directionCount; direction += 1) {
       for (let frame = 1; frame <= template.frames; frame += 1) {
         const directionLabel = directions[direction] ?? String(direction + 1);
-        const framePrompt = template.prompt
+        const actionPrompt = template.prompt
           .replace("{角色描述}", body.prompt)
           .replace("{frame}", String(frame));
-        const enrichedPrompt = [
-          framePrompt,
-          `${directionLabel}朝向`,
-          identityAnchor,
-          "固定seed与负面提示词保持一致。",
-        ]
-          .filter(Boolean)
-          .join("，");
+        const enrichedPrompt = buildFramePrompt({
+          basePrompt: body.prompt,
+          actionPrompt,
+          phase: template.phases[frame - 1] ?? actionPrompt,
+          frame,
+          totalFrames: template.frames,
+          directionLabel,
+        });
 
         const taskId = `task_${randomUUID().slice(0, 8)}`;
         createGenerationTask(
@@ -59,7 +109,8 @@ export async function POST(req: Request) {
             size: body.size,
             count: 1,
             seed: sharedSeed,
-            negativePrompt: body.negativePrompt,
+            negativePrompt: sequenceNegativePrompt,
+            promptMode: "raw",
           },
           taskId,
         );
@@ -86,7 +137,8 @@ export async function POST(req: Request) {
             size: body.size,
             count: 1,
             seed: sharedSeed,
-            negativePrompt: body.negativePrompt,
+            negativePrompt: sequenceNegativePrompt,
+            promptMode: "raw",
           },
           userId,
         );

@@ -33,6 +33,7 @@ export interface StartTaskInput {
   count: 1 | 4 | 9;
   seed?: number;
   negativePrompt?: string;
+  promptMode?: "template" | "raw";
 }
 
 export function createGenerationTask(
@@ -97,7 +98,10 @@ async function runGeneration(
   try {
     updateTask(task.taskId, { status: "processing", progress: 20 });
 
-    const built = buildPrompt(body);
+    const built =
+      body.promptMode === "raw"
+        ? { prompt: body.prompt, negativePrompt: body.negativePrompt ?? "" }
+        : buildPrompt(body);
     const startedAt = Date.now();
 
     let images: Array<{
