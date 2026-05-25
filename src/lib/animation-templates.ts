@@ -25,9 +25,9 @@ export const ANIMATION_TEMPLATES: Record<
     prompt: "{角色描述}，跳跃动作动画，第{frame}帧",
   },
   hurt: {
-    frames: 2,
+    frames: 3,
     direction: 1,
-    prompt: "{角色描述}，受击反馈动画",
+    prompt: "{角色描述}，受击反馈动画，第{frame}帧",
   },
   death: {
     frames: 3,

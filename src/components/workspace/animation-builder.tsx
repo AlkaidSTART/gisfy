@@ -102,6 +102,7 @@ export default function AnimationBuilder({
     () => Array.from({ length: templateInfo.frames }, (_, i) => i + 1),
     [templateInfo.frames],
   );
+  const plannedFrameCount = templateInfo.frames * direction;
 
   const stopPolling = () => {
     if (pollingRef.current) {
@@ -543,9 +544,9 @@ export default function AnimationBuilder({
             : summary.total > 0
               ? `${summary.total} 个任务已创建`
               : visionPrompt
-                ? "已识别参考图，点击生成"
+                ? `将创建 ${plannedFrameCount} 张`
                 : effectivePrompt
-                  ? "就绪"
+                  ? `将创建 ${plannedFrameCount} 张`
                   : "输入提示词或上传参考图"}
         </span>
       </div>
