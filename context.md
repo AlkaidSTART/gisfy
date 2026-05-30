@@ -1,6 +1,6 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-24 · Day 3（开发任务闭环完成，部署留待后续）
+> 最后更新：2026-05-30 · Day 3（开发任务闭环完成，部署留待后续；答辩材料已补齐）
 > 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
 
 ---
@@ -39,6 +39,7 @@
 - ✅ 批量操作（删除选中 / 导出选中 ZIP）
 - ✅ 首页 Landing Page（功能导向重构）
 - ✅ 构建链路通过（`npm run build`）
+- ✅ 七牛云黑客松答辩文档与 FAQ（`docs/GisFy_答辩文档.md`、`docs/GisFy_FAQ.md`）
 
 ---
 
