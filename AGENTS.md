@@ -7,8 +7,23 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # GisFy — Agent 工作手册
 
 > AI 2D 游戏素材生成工具 · 七牛云黑客松 3 天速通项目
-> 详细需求见 [docs/GisFy_PRD.md](docs/GisFy_PRD.md)，技术设计见 [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
-> 当前进度见 [context.md](context.md)；子代理共享上下文见 [context-pack.md](context-pack.md)
+> 详细需求见 [docs/GisFy_PRD.md](docs/GisFy_PRD.md)，技术设计见 [docs/GisFy_TSD.md](docs/GisFy_TSD.md)
+> 当前进度见 [context.md](context.md)；入口导航见 [direction.md](direction.md)；子代理共享上下文见 [context-pack.md](context-pack.md)
+
+---
+
+## 0. Harness 入口
+
+本项目有一套用于答辩和多代理协作的轻量 harness：
+
+- [direction.md](direction.md) — 首读入口，说明不同任务该读哪些文件
+- [harness/README.md](harness/README.md) — harness 总览和答辩展示口径
+- [harness/doc-map.md](harness/doc-map.md) — 文档与源码证据地图
+- [harness/agent-flow.md](harness/agent-flow.md) — 主代理 / 子代理工作流
+- [harness/quality-gates.md](harness/quality-gates.md) — 验收门禁和答辩风险
+- [harness/defense-showcase.html](harness/defense-showcase.html) — 可直接浏览器打开的展示页
+
+新会话先读 [direction.md](direction.md)，再按任务加载最少必要文件，避免把全仓库和全部文档一次性塞进上下文。
 
 ---
 
@@ -50,7 +65,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## 4. 目录结构（目标态）
 
-按 [docs/GisFy_TDD.md §2](docs/GisFy_TDD.md) 实现，**映射到本仓库的 `src/` 目录**：
+按 [docs/GisFy_TSD.md §2](docs/GisFy_TSD.md) 实现，**映射到本仓库的 `src/` 目录**：
 
 ```
 src/
@@ -67,13 +82,13 @@ src/
 └── types/index.ts
 ```
 
-TDD 中写 `app/...` 时，对应到本仓库 `src/app/...`。
+TSD 中写 `app/...` 时，对应到本仓库 `src/app/...`。
 
 ---
 
 ## 5. API 契约
 
-完整定义见 [docs/GisFy_TDD.md §3](docs/GisFy_TDD.md) 与 [docs/GisFy_API.md](docs/GisFy_API.md)。
+完整定义见 [docs/GisFy_TSD.md §3](docs/GisFy_TSD.md) 与 [docs/GisFy_API.md](docs/GisFy_API.md)。
 
 统一响应格式：
 ```ts
@@ -97,7 +112,7 @@ TDD 中写 `app/...` 时，对应到本仓库 `src/app/...`。
 
 ## 7. 风格 & Prompt
 
-三种固定风格：`pixel` / `flat` / `anime`。风格前缀和素材类型模板已经在 [docs/GisFy_TDD.md §4.2](docs/GisFy_TDD.md) 定义好，**直接复用，不要自己重新设计 prompt**。
+三种固定风格：`pixel` / `flat` / `anime`。风格前缀和素材类型模板已经在 [docs/GisFy_TSD.md §4.2](docs/GisFy_TSD.md) 定义好，**直接复用，不要自己重新设计 prompt**。
 
 ---
 

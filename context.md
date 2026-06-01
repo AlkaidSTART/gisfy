@@ -1,7 +1,7 @@
 # GisFy — 项目进度上下文
 
-> 最后更新：2026-05-30 · Day 3（开发任务闭环完成，部署留待后续；答辩材料已补齐）
-> 关联文档：[AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TDD.md](docs/GisFy_TDD.md)
+> 最后更新：2026-05-30 · Day 3（开发任务闭环完成，部署留待后续；答辩材料与 harness 展示工程已补齐）
+> 关联文档：[direction.md](direction.md) · [AGENTS.md](AGENTS.md) · [docs/GisFy_PRD.md](docs/GisFy_PRD.md) · [docs/GisFy_TSD.md](docs/GisFy_TSD.md)
 
 ---
 
@@ -40,6 +40,7 @@
 - ✅ 首页 Landing Page（功能导向重构）
 - ✅ 构建链路通过（`npm run build`）
 - ✅ 七牛云黑客松答辩文档与 FAQ（`docs/GisFy_答辩文档.md`、`docs/GisFy_FAQ.md`）
+- ✅ Harness 展示工程（`direction.md`、`harness/README.md`、`harness/doc-map.md`、`harness/agent-flow.md`、`harness/quality-gates.md`、`harness/defense-showcase.html`）
 
 ---
 

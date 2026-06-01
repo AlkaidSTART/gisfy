@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GisFy Harness 展示页</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: rgba(255, 255, 255, 0.86);
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b42318;
+      --shadow: 0 18px 45px rgba(16, 24, 40, 0.09);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(37, 99, 235, 0.10), transparent 32%),
+        linear-gradient(225deg, rgba(8, 145, 178, 0.10), transparent 38%),
+        var(--bg);
+      line-height: 1.55;
+    }
+    header {
+      padding: 36px 40px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+    }
+    .eyebrow {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 8px 0 10px;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+    .subtitle {
+      max-width: 920px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 56px;
+      display: grid;
+      gap: 18px;
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+    p { margin: 0; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 15px;
+      background: #fff;
+      min-height: 132px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eff6ff;
+      color: var(--blue);
+      margin-bottom: 10px;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .step {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      min-height: 112px;
+    }
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .step span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .step:not(:last-child)::after {
+      content: ">";
+      position: absolute;
+      top: 42%;
+      right: -10px;
+      color: var(--blue);
+      font-weight: 800;
+      z-index: 2;
+    }
+    .columns {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th {
+      background: #f8fafc;
+      color: #344054;
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: 0; }
+    code {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      background: #f2f4f7;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    .status {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 15px;
+    }
+    .metric b {
+      display: block;
+      font-size: 26px;
+      margin-bottom: 4px;
+    }
+    .green { color: var(--green); }
+    .amber { color: var(--amber); }
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+    .script {
+      background: #0f172a;
+      color: #e5eefc;
+      border-radius: 8px;
+      padding: 18px;
+      font-size: 15px;
+    }
+    .script p { color: #cbd5e1; }
+    @media (max-width: 920px) {
+      header { padding: 28px 20px 20px; }
+      .grid, .flow, .columns, .status { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after { display: none; }
+      section { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Qiniu Hackathon · GisFy Engineering Harness</div>
+    <h1>把 AI 辅助开发变成可答辩的工程证据</h1>
+    <p class="subtitle">GisFy 的 harness 用需求、PRD、技术设计、API 契约、Agent 规则、当前进度和质量门禁约束开发过程，让三天黑客松不是堆功能，而是从赛题到可演示产品的闭环。</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>一眼看懂：harness 解决什么</h2>
+      <div class="grid">
+        <div class="card">
+          <span class="tag">范围</span>
+          <h3>防止从素材工具漂移成通用画图站</h3>
+          <p>PRD 把目标锁定在 2D 游戏素材、透明 PNG、Spritesheet 和导出闭环。</p>
+        </div>
+        <div class="card">
+          <span class="tag">架构</span>
+          <h3>把 AI 生成纳入任务系统</h3>
+          <p>生成请求、状态轮询、队列、存储和素材仓库分层，避免按钮直连模型。</p>
+        </div>
+        <div class="card">
+          <span class="tag">协作</span>
+          <h3>主代理控制方向，子代理按需读取</h3>
+          <p><code>direction.md</code> 和 <code>context-pack.md</code> 降低上下文噪声。</p>
+        </div>
+        <div class="card">
+          <span class="tag">答辩</span>
+          <h3>把过程讲成证据链</h3>
+          <p>从赛题原文到实现文件和验证命令，每个关键决策都有落点。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>从赛题到实现的链路</h2>
+      <div class="flow">
+        <div class="step"><strong>要求</strong><span><code>docs/要求.md</code><br>效率、成本、质量、一致性</span></div>
+        <div class="step"><strong>产品</strong><span><code>GisFy_PRD.md</code><br>P0/P1/P2 和用户痛点</span></div>
+        <div class="step"><strong>技术</strong><span><code>GisFy_TSD.md</code><br>架构、模型、存储、导出</span></div>
+        <div class="step"><strong>规则</strong><span><code>AGENTS.md</code><br>Next 16、API 边界、依赖约束</span></div>
+        <div class="step"><strong>实现</strong><span><code>src/app/api/*</code><br>生成、视觉、素材、图集</span></div>
+        <div class="step"><strong>验证</strong><span><code>quality-gates.md</code><br>lint、test、build、demo</span></div>
+      </div>
+    </section>
+
+    <section class="columns">
+      <div>
+        <h2>核心文件地图</h2>
+        <table>
+          <tr><th>文件</th><th>展示价值</th></tr>
+          <tr><td><code>direction.md</code></td><td>项目入口和读取路由，证明不是盲目加载上下文。</td></tr>
+          <tr><td><code>context.md</code></td><td>当前完成度和风险，防止旧文档误导答辩。</td></tr>
+          <tr><td><code>src/lib/generation.ts</code></td><td>AI 生成、PNG 标准化、上传、素材入库的真实链路。</td></tr>
+          <tr><td><code>src/lib/generation-queue.ts</code></td><td>异步任务、并发控制、Redis 队列。</td></tr>
+          <tr><td><code>src/lib/spritesheet.ts</code></td><td>sharp 拼图和帧坐标 JSON，区别于通用 AI 画图。</td></tr>
+          <tr><td><code>docs/GisFy_FAQ.md</code></td><td>尖锐问题准备，包含七牛、fallback、模型漂移等。</td></tr>
+        </table>
+      </div>
+      <div>
+        <h2>当前状态</h2>
+        <div class="status">
+          <div class="metric"><b class="green">P0</b><p>生成、预览、透明 PNG、基础存储链路完成。</p></div>
+          <div class="metric"><b class="green">P1</b><p>Seed、负面提示词、历史、Spritesheet、ZIP 导出完成。</p></div>
+          <div class="metric"><b class="amber">P2</b><p>Tilemap、更多素材类型、七牛生产化切换仍可继续。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>答辩口播</h2>
+      <div class="script">
+        <p>GisFy 的工程亮点不只是调用模型，而是把 AI 生成纳入 2D 游戏素材生产链路。我们用 harness 先把赛题要求拆成 PRD、技术设计和 API 契约，再用 AGENTS、direction 和 context 控制 AI 辅助开发的边界。实现上，生成是异步任务，前端轮询状态；素材进入历史仓库；多帧可以合成 Spritesheet，并导出 PNG、JSON 和 manifest。七牛 Kodo/CDN 是目标存储和分发层，开发期提供 Supabase/base64 fallback 保证演示稳定。这套 harness 让三天黑客松的开发过程可追踪、可复盘、也可答辩。</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
