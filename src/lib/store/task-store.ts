@@ -1,16 +1,32 @@
-import { redis } from "@/lib/redis";
+import { redis, isRedisEnabled } from "@/lib/redis";
 import type { GenerateTask } from "@/types";
 
 const tasks = new Map<string, GenerateTask>();
 const TASK_TTL_SECONDS = 60 * 60;
-const hasRedis = Boolean(process.env.REDIS_URL);
+
+const STATUS_RANK: Record<GenerateTask["status"], number> = {
+  queued: 0,
+  processing: 1,
+  uploading: 2,
+  completed: 3,
+  failed: 3,
+};
 
 function taskKey(taskId: string) {
   return `gisfy:task:${taskId}`;
 }
 
+function isFresher(candidate: GenerateTask, current: GenerateTask) {
+  // Prefer the entry that has progressed further. Without this, a slow/stale
+  // Redis read can roll a locally-completed task back to "uploading 70%".
+  const a = STATUS_RANK[candidate.status] ?? 0;
+  const b = STATUS_RANK[current.status] ?? 0;
+  if (a !== b) return a > b;
+  return (candidate.progress ?? 0) >= (current.progress ?? 0);
+}
+
 async function persistTask(task: GenerateTask) {
-  if (!hasRedis) return;
+  if (!isRedisEnabled()) return;
   try {
     await redis.set(
       taskKey(task.taskId),
@@ -19,18 +35,24 @@ async function persistTask(task: GenerateTask) {
       TASK_TTL_SECONDS,
     );
   } catch (error) {
-    console.warn("[task-store] persist redis failed:", error);
+    console.warn(
+      "[task-store] persist redis failed:",
+      error instanceof Error ? error.message : error,
+    );
   }
 }
 
 async function readTaskFromRedis(taskId: string): Promise<GenerateTask | undefined> {
-  if (!hasRedis) return undefined;
+  if (!isRedisEnabled()) return undefined;
   try {
     const raw = await redis.get(taskKey(taskId));
     if (!raw) return undefined;
     return JSON.parse(raw) as GenerateTask;
   } catch (error) {
-    console.warn("[task-store] read redis failed:", error);
+    console.warn(
+      "[task-store] read redis failed:",
+      error instanceof Error ? error.message : error,
+    );
     return undefined;
   }
 }
@@ -46,10 +68,21 @@ export async function upsertTask(task: GenerateTask) {
 }
 
 export async function getTask(taskId: string): Promise<GenerateTask | undefined> {
-  const parsed = await readTaskFromRedis(taskId);
-  if (!parsed) return tasks.get(taskId);
-  tasks.set(taskId, parsed);
-  return parsed;
+  const local = tasks.get(taskId);
+  const remote = await readTaskFromRedis(taskId);
+  if (!remote) return local;
+  if (!local) {
+    tasks.set(taskId, remote);
+    return remote;
+  }
+  // Pick whichever side has progressed further; if local is ahead, push it
+  // back to Redis so other workers see the up-to-date state.
+  if (isFresher(local, remote)) {
+    void persistTask(local);
+    return local;
+  }
+  tasks.set(taskId, remote);
+  return remote;
 }
 
 export async function updateTask(
@@ -57,7 +90,9 @@ export async function updateTask(
   update: Partial<GenerateTask>,
 ): Promise<boolean> {
   const local = tasks.get(taskId);
-  const base = (await readTaskFromRedis(taskId)) ?? local;
+  const remote = await readTaskFromRedis(taskId);
+  const base =
+    local && remote ? (isFresher(local, remote) ? local : remote) : (local ?? remote);
   if (!base) return false;
 
   const merged = { ...base, ...update };
@@ -73,7 +108,6 @@ export async function touchTask(taskId: string): Promise<boolean> {
   return true;
 }
 
-// Cleanup tasks older than 1 hour
 setInterval(
   () => {
     const cutoff = Date.now() - 60 * 60 * 1000;
@@ -84,4 +118,4 @@ setInterval(
     }
   },
   5 * 60 * 1000,
-);
+).unref?.();

@@ -43,6 +43,7 @@ next-env.d.ts
 
 # agent harness — 临时/本地工作笔记，不入库
 .agent-scratch/
+harness/*
 .agent-notes/
 *.agent.local.md
 .claude/settings.local.json
