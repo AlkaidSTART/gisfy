@@ -95,6 +95,7 @@ export default function GeneratePage() {
     jsonUrl: string;
     frameCount: number;
     sheetSize: { w: number; h: number };
+    assetIds?: string[];
   } | null>(null);
   const [latestPreview, setLatestPreview] = useState<{
     url: string;
@@ -329,7 +330,7 @@ export default function GeneratePage() {
       if (!res.ok || !json?.success) {
         throw new Error(json?.error?.message || "生成 spritesheet 失败");
       }
-      setSheetResult(json.data);
+      setSheetResult({ ...json.data, assetIds });
     } catch (error) {
       console.error(error);
       setSheetResult(null);
@@ -464,7 +465,46 @@ export default function GeneratePage() {
     const selected = selectedAssetIds
       .map((id) => history.find((item) => item.id === id))
       .filter((item): item is Asset => Boolean(item));
+
     try {
+      // Reuse current sheetResult only if it was built from the exact same
+      // selection (same ids in the same order); otherwise pack on the fly so
+      // the exported spritesheet.json carries real frame coordinates instead
+      // of the empty placeholder that used to ship in the ZIP.
+      let sheet = sheetResult;
+      const needsRebuild =
+        !sheet ||
+        sheet.frameCount !== selected.length ||
+        selected.some(
+          (item, idx) => sheetResult?.assetIds?.[idx] !== item.id,
+        );
+
+      if (needsRebuild) {
+        const res = await fetch("/api/spritesheet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            assetIds: selected.map((item) => item.id),
+            format: sheetFormat,
+            name: "selected-assets",
+            columns: sheetColumns,
+            padding: sheetPadding,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.success) {
+          throw new Error(json?.error?.message || "生成 spritesheet 失败");
+        }
+        sheet = {
+          pngUrl: json.data.pngUrl,
+          jsonUrl: json.data.jsonUrl,
+          frameCount: json.data.frameCount,
+          sheetSize: json.data.sheetSize,
+          assetIds: selected.map((item) => item.id),
+        };
+      }
+
       const zipBlob = await createExportPackage({
         name: "selected-assets",
         spriteItems: selected.map((item, index) => ({
@@ -472,16 +512,15 @@ export default function GeneratePage() {
           url: item.url,
         })),
         spritesheet: {
-          pngUrl:
-            sheetResult?.pngUrl ??
-            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2Z8VkAAAAASUVORK5CYII=",
-          jsonUrl:
-            sheetResult?.jsonUrl ??
-            "data:application/json;base64,eyJmcmFtZXMiOltdLCJtZXRhIjp7fX0=",
+          pngUrl: sheet!.pngUrl,
+          jsonUrl: sheet!.jsonUrl,
         },
         manifest: {
           name: "selected-assets",
           count: selected.length,
+          frameCount: sheet!.frameCount,
+          sheetSize: sheet!.sheetSize,
+          format: sheetFormat,
           generatedAt: new Date().toISOString(),
         },
       });
@@ -489,7 +528,15 @@ export default function GeneratePage() {
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "导出失败");
     }
-  }, [selectedAssetIds, history, sheetResult]);
+  }, [
+    selectedAssetIds,
+    history,
+    sheetResult,
+    sheetFormat,
+    sheetColumns,
+    sheetPadding,
+    userId,
+  ]);
 
   const handleSequenceFrameGenerated = useCallback(
     (frame: {
