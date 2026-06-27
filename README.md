@@ -1,7 +1,7 @@
 # 🎮 GisFy — AI 2D 游戏素材生成器
 
 > **将创意转化为游戏资产，只需一句话。**  
-> 七牛云黑客松 · 3 天速通项目
+
 
 [![Vercel](https://img.shields.io/badge/在线体验-gisfy.vercel.app-0EA5E9?style=for-the-badge&logo=vercel)](https://gisfy.vercel.app)
 [![GitHub](https://img.shields.io/badge/GitHub-源码-181717?style=for-the-badge&logo=github)](https://github.com/your-username/gisfy)
